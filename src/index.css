@@ -9,3 +9,7 @@ body {
   background-color: #F4FAFF;
   margin: 0;
 }
+
+@utility reading-container {
+  @apply w-full p-2 bg-[#F4FAFF] rounded-lg outline outline-1 outline-blue-100 inline-flex flex-col justify-start items-start gap-1;
+}

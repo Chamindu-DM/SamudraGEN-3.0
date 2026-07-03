@@ -11,8 +11,8 @@ function App() {
   return (
     <div className="w-screen h-screen bg-sky-50 flex flex-col justify-start items-start overflow-hidden">
       <AppHeader />
-      <div className='flex-1 self-stretch p-4 flex flex-col justify-start items-start gap-4'>
-        <div className='w-full h-full grid grid-cols-3 grid-rows-2 gap-4'>
+      <div className='flex-1 self-stretch p-2 flex flex-col justify-start items-start gap-2'>
+        <div className='w-full h-full grid grid-cols-3 grid-rows-2 gap-2'>
           <Simulation/>
           <DailyMetrics/>
           <PowerOutputChart/>
