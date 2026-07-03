@@ -50,7 +50,7 @@ export function VoltageCurrent() {
                 top: 40,
                 right: 40,
                 bottom: 40,
-                left: 50
+                left: 40
             },
             xAxis: { type: 'time', splitLine: { show: false } },
             yAxis: [
