@@ -1,5 +1,6 @@
 import Logo from "../../assets/Logo.png";
 import CaretDown from '../../assets/CaretDown.svg'
+import {LiveBadge} from "../ui/LiveBadge"
 
 export default function AppHeader() {
     return (
@@ -12,10 +13,7 @@ export default function AppHeader() {
                 <div className="text-center justify-start text-black/80 text-xs font-semibold font-['Inter']">Jul 3, 2026, 10:30 AM</div>
                 <img className="size-4" src={CaretDown}/>
             </div>
-            <div className="size- px-3 py-2 bg-green-100 rounded-lg outline outline-1 outline-offset-[-1px] outline-green-800/10 flex justify-center items-center gap-2">
-                <div className="size-2 bg-green-500 rounded-full" />
-                <div className="text-center justify-start text-green-800 text-xs font-semibold font-['Inter'] uppercase">Live</div>
-            </div>
+            <LiveBadge/>
         </div>
     </div>
     )

@@ -13,3 +13,7 @@ body {
 @utility reading-container {
   @apply w-full p-2 bg-[#F4FAFF] rounded-lg outline outline-1 outline-blue-100 inline-flex flex-col justify-start items-start gap-1;
 }
+
+@utility card-title {
+  @apply text-left text-black/80 text-sm font-semibold uppercase;
+}
