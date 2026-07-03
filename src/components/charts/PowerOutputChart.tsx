@@ -1,4 +1,4 @@
-import Arrow from "../../assets/ArrowUp.svg?react"
+// import Arrow from "../../assets/ArrowUp.svg?react"
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 
