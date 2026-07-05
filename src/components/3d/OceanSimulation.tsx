@@ -62,16 +62,22 @@ export function OceanSimulation() {
 
         // --- MATERIALS ---
         const colors = {
-            yellowFlap: 0xffcc00,
-            darkMetal: 0x2a2e35,
-            lightMetal: 0x5a606b,
+            foundation: 0x8b7355,   
+            outerFrame: 0x1a1a1a,   
+            innerFrame: 0x808080,   // Updated to #808080
+            cylinders: 0xa5b51c,    // Updated to #a5b51c
+            generator: 0x90959e,    
+            belt: 0x333333,         
             seabed: 0x9c8b74,
             water: 0x0055a4
         };
 
-        const matFlap = new THREE.MeshStandardMaterial({ color: colors.yellowFlap, roughness: 0.3, metalness: 0.2 });
-        const matBase = new THREE.MeshStandardMaterial({ color: colors.darkMetal, roughness: 0.7, metalness: 0.5 });
-        const matPin = new THREE.MeshStandardMaterial({ color: colors.lightMetal, roughness: 0.4, metalness: 0.8 });
+        const matFoundation = new THREE.MeshStandardMaterial({ color: colors.foundation, roughness: 0.9, metalness: 0.1 });
+        const matOuterFrame = new THREE.MeshStandardMaterial({ color: colors.outerFrame, roughness: 0.7, metalness: 0.6 });
+        const matInnerFrame = new THREE.MeshStandardMaterial({ color: colors.innerFrame, roughness: 0.5, metalness: 0.8 });
+        const matCylinder = new THREE.MeshStandardMaterial({ color: colors.cylinders, roughness: 0.4, metalness: 0.3 });
+        const matGenerator = new THREE.MeshStandardMaterial({ color: colors.generator, roughness: 0.6, metalness: 0.5 });
+        const matBelt = new THREE.MeshStandardMaterial({ color: colors.belt, roughness: 0.8, metalness: 0.1 });
 
         // --- ENVIRONMENT (Seabed) ---
         const seabedGeo = new THREE.PlaneGeometry(200, 200, 32, 32);
@@ -91,66 +97,213 @@ export function OceanSimulation() {
 
         // --- DEVICE CONSTRUCTION (OSWEC) ---
         const deviceGroup = new THREE.Group();
+        // Rotate the entire device by 90 degrees so it faces the waves (which travel along the X axis)
+        deviceGroup.rotation.y = -Math.PI / 2;
         scene.add(deviceGroup);
 
-        const baseWidth = 10;
-        const baseLength = 16;
-        const baseHeight = 2;
+        const baseWidth = 18;
+        const baseDepth = 14;
+        const topWidth = 18;
+        const topDepth = 6;
+        const height = 18;
+
+        // 1. Foundation (4 blocks)
+        const foundGeo = new THREE.CylinderGeometry(1.5, 2.5, 2, 4);
+        foundGeo.rotateY(Math.PI / 4); 
+        const foundationPositions = [
+            [-baseWidth/2, baseDepth/2],
+            [baseWidth/2, baseDepth/2],
+            [-baseWidth/2, -baseDepth/2],
+            [baseWidth/2, -baseDepth/2]
+        ];
+        foundationPositions.forEach(pos => {
+            const block = new THREE.Mesh(foundGeo, matFoundation);
+            block.position.set(pos[0], -14, pos[1]);
+            block.castShadow = true;
+            block.receiveShadow = true;
+            deviceGroup.add(block);
+        });
+
+        // 2. Outer Frame
+        const beamSize = 0.6;
+        const frameGeo = new THREE.BoxGeometry(beamSize, beamSize, beamSize);
+
+        const createBeam = (l: number, x: number, y: number, z: number, axis: 'x'|'y'|'z') => {
+            const mesh = new THREE.Mesh(frameGeo, matOuterFrame);
+            if (axis === 'x') mesh.scale.set(l / beamSize, 1, 1);
+            else if (axis === 'y') mesh.scale.set(1, l / beamSize, 1);
+            else if (axis === 'z') mesh.scale.set(1, 1, l / beamSize);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            deviceGroup.add(mesh);
+            return mesh;
+        };
+
+        createBeam(baseWidth + beamSize, 0, -12.7, baseDepth/2, 'x'); 
+        createBeam(baseWidth + beamSize, 0, -12.7, -baseDepth/2, 'x'); 
+        createBeam(baseDepth - beamSize, -baseWidth/2, -12.7, 0, 'z'); 
+        createBeam(baseDepth - beamSize, baseWidth/2, -12.7, 0, 'z'); 
+
+        createBeam(topWidth + beamSize, 0, -12.7 + height, topDepth/2, 'x'); 
+        createBeam(topWidth + beamSize, 0, -12.7 + height, -topDepth/2, 'x'); 
+        createBeam(topDepth - beamSize, -topWidth/2, -12.7 + height, 0, 'z'); 
+        createBeam(topDepth - beamSize, topWidth/2, -12.7 + height, 0, 'z'); 
+
+        const createPillar = (x: number, z1: number, z2: number) => {
+            const pt1 = new THREE.Vector3(x, -12.7, z1);
+            const pt2 = new THREE.Vector3(x, -12.7 + height, z2);
+            const dist = pt1.distanceTo(pt2);
+            
+            const geom = new THREE.BoxGeometry(beamSize, dist, beamSize);
+            geom.translate(0, dist / 2, 0); 
+            
+            const mesh = new THREE.Mesh(geom, matOuterFrame);
+            mesh.position.copy(pt1);
+            mesh.lookAt(pt2);
+            mesh.rotateX(Math.PI / 2); 
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            deviceGroup.add(mesh);
+        };
+
+        createPillar(-baseWidth/2, baseDepth/2, topDepth/2); 
+        createPillar(baseWidth/2, baseDepth/2, topDepth/2);  
+        createPillar(-baseWidth/2, -baseDepth/2, -topDepth/2); 
+        createPillar(baseWidth/2, -baseDepth/2, -topDepth/2);  
+
+        const midDepth = (baseDepth + topDepth) / 2;
+        createBeam(midDepth, -baseWidth/2, -12.7 + height/2, 0, 'z');
+        createBeam(midDepth, baseWidth/2, -12.7 + height/2, 0, 'z');
+
+        // 3. Main Shaft and Bearings
+        const pivotZ = 0; 
+        const pivotY = -12;
         
-        const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(baseLength, baseHeight, baseWidth), matBase);
-        baseMesh.position.y = -15 + baseHeight/2;
-        baseMesh.receiveShadow = true;
-        baseMesh.castShadow = true;
-        deviceGroup.add(baseMesh);
+        createBeam(baseWidth, 0, -12.7, pivotZ, 'x');
 
-        const supportGeo = new THREE.BoxGeometry(4, 3, 2);
-        const supportLeft = new THREE.Mesh(supportGeo, matBase);
-        supportLeft.position.set(0, -15 + baseHeight + 1.5, baseWidth/2 - 1);
-        supportLeft.castShadow = true;
-        deviceGroup.add(supportLeft);
+        const shaftLen = baseWidth + 5;
+        const shaftGeo = new THREE.CylinderGeometry(0.35, 0.35, shaftLen, 16);
+        const shaft = new THREE.Mesh(shaftGeo, matInnerFrame);
+        shaft.rotation.z = Math.PI / 2;
+        shaft.position.set(1.5, pivotY, pivotZ); 
+        shaft.castShadow = true;
+        deviceGroup.add(shaft);
 
-        const supportRight = new THREE.Mesh(supportGeo, matBase);
-        supportRight.position.set(0, -15 + baseHeight + 1.5, -baseWidth/2 + 1);
-        supportRight.castShadow = true;
-        deviceGroup.add(supportRight);
+        for (let i = 0; i < 4; i++) {
+            const bx = -baseWidth/2 + 2 + i * ((baseWidth - 4) / 3);
+            const bearing = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), matInnerFrame);
+            bearing.position.set(bx, -12.7 + 0.6, pivotZ);
+            bearing.castShadow = true;
+            deviceGroup.add(bearing);
+        }
 
+        // 4. Inner Flap (Pendulum) Group
         const flapPivot = new THREE.Group();
-        const pivotY = -15 + baseHeight + 1.5; 
-        flapPivot.position.set(0, pivotY, 0);
+        flapPivot.position.set(0, pivotY, pivotZ);
         deviceGroup.add(flapPivot);
 
-        const pinGeo = new THREE.CylinderGeometry(0.6, 0.6, baseWidth + 1, 16);
-        const pin = new THREE.Mesh(pinGeo, matPin);
-        pin.rotation.x = Math.PI / 2;
-        pin.castShadow = true;
-        flapPivot.add(pin);
-
-        const flapAssembly = new THREE.Group();
-        flapPivot.add(flapAssembly);
-
-        const plateGeo = new THREE.BoxGeometry(2, 12, 0.5);
-        const plateLeft = new THREE.Mesh(plateGeo, matFlap);
-        plateLeft.position.set(0, 6, baseWidth/2 - 1.5);
-        plateLeft.castShadow = true;
-        flapAssembly.add(plateLeft);
-
-        const plateRight = new THREE.Mesh(plateGeo, matFlap);
-        plateRight.position.set(0, 6, -baseWidth/2 + 1.5);
-        plateRight.castShadow = true;
-        flapAssembly.add(plateRight);
-
-        const chamberRadius = 1.2;
-        const chamberLength = baseWidth - 3;
-        const chamberGeo = new THREE.CylinderGeometry(chamberRadius, chamberRadius, chamberLength, 32);
+        const innerFrameWidth = baseWidth - 4; 
+        const innerFrameHeight = 15.5;
+        const frameThick = 0.5;
+        const frameDepth = 0.8;
         
-        for(let i=0; i<3; i++) {
-            const chamber = new THREE.Mesh(chamberGeo, matFlap);
-            chamber.rotation.x = Math.PI / 2;
-            chamber.position.set(0, 3 + (i * 3.5), 0);
-            chamber.castShadow = true;
-            chamber.receiveShadow = true;
-            flapAssembly.add(chamber);
+        const createInnerBeam = (w: number, h: number, d: number, x: number, y: number, z: number) => {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), matInnerFrame);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            flapPivot.add(mesh);
+        };
+
+        createInnerBeam(frameThick, innerFrameHeight + frameThick*2, frameDepth, -innerFrameWidth/2, innerFrameHeight/2, 0);
+        createInnerBeam(frameThick, innerFrameHeight + frameThick*2, frameDepth, innerFrameWidth/2, innerFrameHeight/2, 0);
+        createInnerBeam(innerFrameWidth, frameThick, frameDepth, 0, innerFrameHeight + frameThick, 0);
+        createInnerBeam(innerFrameWidth, frameThick, frameDepth, 0, -frameThick, 0);
+        createInnerBeam(innerFrameWidth, frameThick, frameDepth, 0, innerFrameHeight * 0.33, 0);
+        createInnerBeam(innerFrameWidth, frameThick, frameDepth, 0, innerFrameHeight * 0.66, 0);
+
+        const cylRadius = 0.6;
+        const cylSpacing = 1.23; 
+        for (let i = 0; i < 12; i++) {
+            const cylGeo = new THREE.CylinderGeometry(cylRadius, cylRadius, innerFrameWidth - frameThick, 32);
+            const cyl = new THREE.Mesh(cylGeo, matCylinder);
+            cyl.rotation.z = Math.PI / 2;
+            cyl.position.set(0, (i * cylSpacing) + cylRadius + 0.25, 0);
+            cyl.castShadow = true;
+            flapPivot.add(cyl);
         }
+
+        // 5. PTO (Generator, Pulleys, Belt)
+        const ptoGroup = new THREE.Group();
+        deviceGroup.add(ptoGroup);
+
+        const genW = 5, genH = 2.5, genD = 3.5;
+        const genBox = new THREE.Mesh(new THREE.BoxGeometry(genW, genH, genD), matGenerator);
+        genBox.position.set(baseWidth/2 - genW/2, -12.7 + height + genH/2, pivotZ);
+        genBox.castShadow = true;
+        ptoGroup.add(genBox);
+
+        const pulleyThick = 0.6;
+        const topPulleyRadius = 0.6;
+        const topPulleyY = -12.7 + height + genH/2;
+        const topPulleyX = baseWidth/2 + 2.5; 
+        
+        const topPulleyGeo = new THREE.CylinderGeometry(topPulleyRadius, topPulleyRadius, pulleyThick, 32);
+        const topPulley = new THREE.Mesh(topPulleyGeo, matInnerFrame);
+        topPulley.rotation.set(0, 0, Math.PI / 2);
+        topPulley.position.set(topPulleyX, topPulleyY, pivotZ);
+        topPulley.castShadow = true;
+        ptoGroup.add(topPulley);
+
+        const genShaftGeo = new THREE.CylinderGeometry(0.2, 0.2, 2.5, 16);
+        const genShaft = new THREE.Mesh(genShaftGeo, matInnerFrame);
+        genShaft.rotation.set(0, 0, Math.PI / 2);
+        genShaft.position.set(topPulleyX - 1.25, topPulleyY, pivotZ);
+        genShaft.castShadow = true;
+        ptoGroup.add(genShaft);
+
+        const largePulleyRadius = 2.8;
+        const largePulleyGeo = new THREE.CylinderGeometry(largePulleyRadius, largePulleyRadius, pulleyThick, 32);
+        const largePulley = new THREE.Mesh(largePulleyGeo, matInnerFrame);
+        largePulley.rotation.set(0, 0, Math.PI / 2);
+        largePulley.position.set(topPulleyX, pivotY, pivotZ); 
+        largePulley.castShadow = true;
+        
+        for(let i=0; i<6; i++) {
+            const angle = (Math.PI * 2 / 6) * i;
+            const r = largePulleyRadius * 0.65;
+            const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, pulleyThick + 0.05, 16), new THREE.MeshBasicMaterial({color: 0x222222}));
+            hole.position.set(Math.cos(angle)*r, 0, Math.sin(angle)*r);
+            largePulley.add(hole);
+        }
+        
+        deviceGroup.add(largePulley);
+
+        const beltThickness = 0.15;
+        const beltWidth = 0.45;
+        const distY = topPulleyY - pivotY; 
+        const radiusDiff = largePulleyRadius - topPulleyRadius;
+        const beltLength = Math.hypot(distY, radiusDiff);
+        const beltAngle = Math.asin(radiusDiff / beltLength);
+        
+        const createBeltSegment = (side: 1 | -1) => {
+            const geo = new THREE.BoxGeometry(beltWidth, beltLength, beltThickness);
+            const mesh = new THREE.Mesh(geo, matBelt);
+            
+            const cx = topPulleyX;
+            const cy = pivotY + distY / 2;
+            const cz = pivotZ;
+            
+            const avgRadius = (largePulleyRadius + topPulleyRadius) / 2;
+            mesh.position.set(cx, cy, cz + side * avgRadius);
+            mesh.rotation.x = side * beltAngle;
+            mesh.castShadow = true;
+            return mesh;
+        };
+        
+        deviceGroup.add(createBeltSegment(1));
+        deviceGroup.add(createBeltSegment(-1));
 
         // --- WATER SIMULATION ---
         const waterSize = 150;
@@ -222,10 +375,13 @@ export function OceanSimulation() {
             const phaseDelay = -0.4; 
             const surgeForce = Math.sin(-time * waveFrequency + phaseDelay) * waveAmplitude;
             const maxAngle = 0.6; 
-            const targetRotationZ = (surgeForce / 3.5) * maxAngle; 
+            const targetRotationX = (surgeForce / 3.5) * maxAngle; 
 
-            flapPivot.rotation.z += (targetRotationZ - flapPivot.rotation.z) * 0.08;
+            flapPivot.rotation.x += (targetRotationX - flapPivot.rotation.x) * 0.08;
 
+            // Optional: Also gently rotate the large pulley visually!
+            largePulley.rotation.x = Math.PI / 2 + flapPivot.rotation.x;
+            
             controls.update();
             renderer.render(scene, camera);
         }
