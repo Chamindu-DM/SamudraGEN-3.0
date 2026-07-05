@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import Icon from '../../assets/X.svg?react';
 
 export function OceanSimulation() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const [showControls, setShowControls] = useState(true);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -16,8 +18,8 @@ export function OceanSimulation() {
 
         // --- SCENE SETUP ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xb0d5ce);
-        scene.fog = new THREE.FogExp2(0xb0d5ce, 0.015);
+        scene.background = new THREE.Color(0xD0EBFF);
+        scene.fog = new THREE.FogExp2(0xD0EBFF, 0.015);
 
         const rect = container.getBoundingClientRect();
         const camera = new THREE.PerspectiveCamera(45, rect.width / rect.height, 0.1, 1000);
@@ -264,19 +266,31 @@ export function OceanSimulation() {
         ptoGroup.add(genShaft);
 
         const largePulleyRadius = 2.8;
-        const largePulleyGeo = new THREE.CylinderGeometry(largePulleyRadius, largePulleyRadius, pulleyThick, 32);
-        const largePulley = new THREE.Mesh(largePulleyGeo, matInnerFrame);
-        largePulley.rotation.set(0, 0, Math.PI / 2);
-        largePulley.position.set(topPulleyX, pivotY, pivotZ); 
-        largePulley.castShadow = true;
+        
+        const pulleyShape = new THREE.Shape();
+        pulleyShape.absarc(0, 0, largePulleyRadius, 0, Math.PI * 2, false);
         
         for(let i=0; i<6; i++) {
             const angle = (Math.PI * 2 / 6) * i;
             const r = largePulleyRadius * 0.65;
-            const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, pulleyThick + 0.05, 16), new THREE.MeshBasicMaterial({color: 0x222222}));
-            hole.position.set(Math.cos(angle)*r, 0, Math.sin(angle)*r);
-            largePulley.add(hole);
+            const holePath = new THREE.Path();
+            holePath.absarc(Math.cos(angle)*r, Math.sin(angle)*r, 0.7, 0, Math.PI * 2, true);
+            pulleyShape.holes.push(holePath);
         }
+        
+        const extrudeSettings = {
+            depth: pulleyThick,
+            bevelEnabled: false,
+            curveSegments: 32
+        };
+        const largePulleyGeo = new THREE.ExtrudeGeometry(pulleyShape, extrudeSettings);
+        largePulleyGeo.translate(0, 0, -pulleyThick / 2); // Center along extrusion axis
+
+        const largePulley = new THREE.Mesh(largePulleyGeo, matInnerFrame);
+        // ExtrudeGeometry extrudes along Z. Rotate Y by 90 to align main axis with X.
+        largePulley.rotation.set(0, Math.PI / 2, 0);
+        largePulley.position.set(topPulleyX, pivotY, pivotZ); 
+        largePulley.castShadow = true;
         
         deviceGroup.add(largePulley);
 
@@ -297,7 +311,9 @@ export function OceanSimulation() {
             
             const avgRadius = (largePulleyRadius + topPulleyRadius) / 2;
             mesh.position.set(cx, cy, cz + side * avgRadius);
-            mesh.rotation.x = side * beltAngle;
+            
+            // Invert the rotation so the belt leans inwards at the top (A-shape) instead of outwards
+            mesh.rotation.x = -side * beltAngle;
             mesh.castShadow = true;
             return mesh;
         };
@@ -380,7 +396,7 @@ export function OceanSimulation() {
             flapPivot.rotation.x += (targetRotationX - flapPivot.rotation.x) * 0.08;
 
             // Optional: Also gently rotate the large pulley visually!
-            largePulley.rotation.x = Math.PI / 2 + flapPivot.rotation.x;
+            largePulley.rotation.x = flapPivot.rotation.x;
             
             controls.update();
             renderer.render(scene, camera);
@@ -413,9 +429,18 @@ export function OceanSimulation() {
     return (
         <div className="relative w-full h-full rounded-lg overflow-hidden isolate outline outline-1 outline-sky-500/20">
             <div ref={containerRef} className="w-full h-full bg-sky-200/50" />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-xs font-medium font-['Inter'] pointer-events-none flex items-center gap-2 backdrop-blur-sm whitespace-nowrap">
-                Left Click: Rotate | Right Click: Pan | Scroll: Zoom
-            </div>
+            {showControls && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white pl-4 pr-2 py-2 rounded-full text-xs font-medium font-['Inter'] flex items-center gap-0.5 backdrop-blur-sm whitespace-nowrap shadow-lg transition-all">
+                    <span>Left Click: Rotate | Right Click: Pan | Scroll: Zoom</span>
+                    <button 
+                        onClick={() => setShowControls(false)}
+                        className="w-5 h-5 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors shrink-0"
+                        title="Dismiss"
+                    >
+                        <Icon className="size-3 text-white stroke-white stroke-[0.8px]"/>
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
