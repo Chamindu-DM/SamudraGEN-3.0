@@ -1,0 +1,1 @@
+// Handles the AWS IoT Core connection & certificate logic

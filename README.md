@@ -1,75 +1,68 @@
-# React + TypeScript + Vite
+# SamudraGEN 3.0: Marine Telemetry Digital Twin
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 1. Project Overview & Identity
 
-Currently, two official plugins are available:
+We are building **SamudraGEN 3.0**, an advanced marine telemetry dashboard and real-time digital twin for an Oscillating Wave Surge Converter (OWSC) prototype. The physical device is a bottom-hinged floating module deployed near a coastal pier to harvest renewable energy from sea waves.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+An onboard **ESP32 microcontroller** reads high-frequency physical and electrical sensor data and transmits it over standard Wi-Fi via a local router.
 
-## React Compiler
+The primary goal of this application is to give engineers a zero-latency, highly visual representation of the device's mechanical movement and electrical efficiency from anywhere in the world.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 2. Core Frontend Tech Stack & Architecture
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+To avoid Server-Side Rendering (SSR) hydration issues with canvas and WebGL engines, this project is built entirely as a pure, high-performance **Single Page Application (SPA)**.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+* **Build Tool & Framework:** Vite + React + TypeScript
+* **Styling:** Tailwind CSS (utility-first approach matching a strict, clean modern industrial UI)
+* **3D Digital Twin Engine:** Native `three` (Three.js) initialized within a React reference to maintain direct control over the WebGL render loop, ensuring maximum performance without the overhead of wrappers.
+* **Data Visualization:** Apache ECharts (`echarts` + `echarts-for-react`) for canvas-level performance with dense time-series data.
+* **State Management:** Zustand (for reactive, decoupled state injection to prevent DOM-wide re-renders during high-frequency telemetry ticks)
+* **Communication Protocol:** `mqtt` (MQTT over WebSockets for direct browser-to-cloud telemetry ingestion)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 3. Data Flow & Serverless Architecture
 
+The project leverages a decoupled, serverless backend. No traditional backend server logic should be written inside this repository.
+
+1. **Ingestion:** ESP32 -> WiFi Router -> AWS IoT Core (MQTT Topic: `ocean/wave/telemetry`).
+2. **Live Stream (Real-Time):** The Vite SPA connects directly to AWS IoT Core via secure WebSockets (authenticated securely via AWS Cognito temporary credentials). Incoming payloads are pushed directly to the global Zustand store.
+3. **Historical Logs (24/7 Tracking):** An AWS IoT rule routes incoming payloads into an **Amazon DynamoDB** database. To fetch logs, the frontend queries an external **AWS Lambda** serverless function exposed via **AWS API Gateway**.
+
+### JSON Telemetry Schema Example
+
+```json
+{
+  "ts": "10:30:12",
+  "waveHeight": 1.55,
+  "waveFreq": 0.25,
+  "rpm": 120,
+  "power": 24.0,
+  "voltage": 24.1,
+  "current": 1.0
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 5. Repository File Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The codebase is organized as follows:
 
+```text
+src/
+├── assets/          # Static assets (SVGs, logos, images)
+├── components/
+│   ├── 3d/          # OceanSimulation.tsx (Native Three.js integration)
+│   ├── charts/      # Apache ECharts components (PowerOutputChart, WaveHeight, DailyMetrics, etc.)
+│   ├── layout/      # AppHeader.tsx
+│   └── ui/          # Reusable dashboard widgets and common elements (CommonCard, LiveBadge, Reading)
+├── services/        # mqttClient.ts (AWS IoT WebSockets or similar ingestion setup)
+├── store/           # telemetryStore.ts (Zustand Global State Engine)
+├── App.css          # Global Styles
+├── App.tsx          # Main Grid Assembler
+├── index.css        # Tailwind Injections
+└── main.tsx         # React DOM Entry
 ```
