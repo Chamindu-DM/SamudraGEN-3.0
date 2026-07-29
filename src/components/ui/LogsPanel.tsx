@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Xicon from "../../assets/X.svg?react"
-import { useTelemtryStore} from "../../store/telemetryStore";
+import { useTelemetryStore } from "../../store/telemetryStore";
 
 function getStatus (rpm: number, power: number): "Normal" | "Critical" | "Warning" {
     if (rpm >= 270 || power >= 25 ) return "Critical";
@@ -23,7 +23,7 @@ interface LogsPanelProps {
 }
 
 export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
-    const history = useTelemtryStore((state) => state.history);
+    const history = useTelemetryStore((state) => state.history);
 
     const [visible, setVisible] = useState(false);
     const [animating, setAnimating] = useState(false);
@@ -93,9 +93,41 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
                     </div>
 
                     {/* Table body (scrollable) */}
-                </div>
-                </div>
-            </div>
-        )
-    })
+                    <div className="flex-1 overflow-y-auto">
+                        {history.length === 0 ? (
+                            <div className="p-8 text-center text-sm text-gray-500">
+                                Waiting for telemetry data...
+                            </div>
+                        ) : (
+                            [...history].reverse().map((log, index) => {
+                                const status = getStatus(log.rpm, log.power);
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`flex px-4 py-2 hover:bg-sky-50/50 transition-colors border-b border-gray-50 ${
+                                            status === "Critical" ? "bg-red-50/40" : ""
+                                        }`}
+                                        >
+                                            <div className="w-20 text-xs text-black">{log.ts}</div>
+                                            <div className="w-24 flex items-center gap-2">
+                                                <div className={`w-2 h-2 rounded-full ${statusDotClass(status)}`}>
+                                                    <span className="text-xs text-black">{status}</span>
+                                                </div>
+                                                <div className="w-24 text-xs text-black">{log.rpm}</div>
+                                                <div className="w-24 text-xs text-black">{log.power}</div>
+                                                <div className="w-24 text-xs text-black">{log.voltage}</div>
+                                                <div className="w-24 text-xs text-black">{log.current}</div>
+                                                <div className="w-24 text-xs text-black">{log.waveHeight.toFixed(2)}</div>
+                                                <div className="w-24 text-xs text-black">{log.waveFreq.toFixed(2)}</div>
+                                            </div>
+                                        </div>
+                );
+              })
+            )}
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  );
 }

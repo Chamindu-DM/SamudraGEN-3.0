@@ -6,11 +6,14 @@ import { PowerOutputChart } from './components/charts/PowerOutputChart'
 import { VoltageCurrent } from './components/charts/VoltageCurrent'
 import { WaveFreq } from './components/charts/WaveFreq'
 import { WaveHeight } from './components/charts/WaveHeight'
+import { LogsPanel } from './components/ui/LogsPanel'
+import { useState } from 'react'
 
 function App() {
+  const [isLogsPanelOpen, setIsLogsPanelOpen] = useState(false);
   return (
     <div className="w-screen h-screen bg-sky-50 flex flex-col justify-start items-start">
-      <AppHeader />
+      <AppHeader onOpenLogs={() => setIsLogsPanelOpen(true)} />
       <div className='flex-1 self-stretch p-2 flex flex-col justify-start items-start gap-2'>
         <div className='w-full flex flex-col md:grid md:grid-cols-3 md:grid-rows-2 md:h-full gap-2'>
           <Simulation />
@@ -20,6 +23,10 @@ function App() {
           <WaveFreq />
           <WaveHeight />
         </div>
+        <LogsPanel
+          isOpen={isLogsPanelOpen}
+          onClose={()=> setIsLogsPanelOpen(false)}
+        />
       </div>
     </div>
   )

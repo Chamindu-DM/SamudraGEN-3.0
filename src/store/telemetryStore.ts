@@ -1,6 +1,8 @@
 // Global state management
 // Zustand store: grabs MQTT data and feeds it to UI/3D
-interface TelemetryTick {
+import { create } from 'zustand';
+
+export interface TelemetryTick {
   ts: string;          // "HH:MM:SS"
   waveHeight: number;  // meters
   waveFreq: number;    // Hz
@@ -10,7 +12,7 @@ interface TelemetryTick {
   current: number;     // amps
 }
 
-interface TelemetryState {
+export interface TelemetryState {
   // Latest single reading (for gauges, badges, Reading components)
   latest: TelemetryTick | null;
 
@@ -26,3 +28,19 @@ interface TelemetryState {
   setConnected: (status: boolean) => void;
   clearHistory: () => void;
 }
+
+export const useTelemetryStore = create<TelemetryState>((set) => ({
+  latest: null,
+  history: [],
+  maxHistory: 200,
+  isConnected: false,
+  pushTick: (tick) => set((state) => {
+    const newHistory = [...state.history, tick].slice(-state.maxHistory);
+    return {
+      latest: tick,
+      history: newHistory,
+    };
+  }),
+  setConnected: (status) => set({ isConnected: status }),
+  clearHistory: () => set({ history: [], latest: null }),
+}));

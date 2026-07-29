@@ -2,9 +2,14 @@ import Logo from "../../assets/Logo.png";
 import { LiveBadge } from "../ui/LiveBadge"
 import { DatePicker } from "../ui/DatePicker";
 
-export default function AppHeader() {
+interface AppHeaderProps {
+    onOpenLogs: () => void;
+}
+
+export default function AppHeader({onOpenLogs}: AppHeaderProps) {
     const handleDateSelect = (selectedDate: string) => {
         console.log("Fetching historical DB data for:", selectedDate);
+        onOpenLogs();
     };
 
     return (
