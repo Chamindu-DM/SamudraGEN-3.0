@@ -1,5 +1,4 @@
 import Logo from "../../assets/Logo.png";
-import CaretDown from '../../assets/CaretDown.svg'
 import {LiveBadge} from "../ui/LiveBadge"
 import { DatePicker } from "../ui/DatePicker";
 
