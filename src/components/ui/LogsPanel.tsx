@@ -42,7 +42,7 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
         if (!visible) return null;
 
         return(
-            <div className="fixed inset-0 z-50 overflow-hidden">
+            <div className="fixed top-[65px] bottom-0 left-0 right-0 z-40 overflow-hidden">
                 {/* Backdrop */}
                 <div className={`absolute inset-0 bg-black transition-opacity duration-300 ${
                     animating ? "opacity-10" : "opacity-0"
@@ -50,15 +50,15 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
                 onClick={onClose}
                 />
                 {/* Side Panel */}
-                <div className={`absolute top-0 right-0 h-full w-full max-w-[920px] min-w-[600px] bg-white outline outline-1 outline-blue-100 flex flex-col transition-transform duration-300 ease-out ${
+                <div className={`absolute top-0 right-0 h-full w-full max-w-[820px] min-w-[600px] bg-white outline outline-1 outline-blue-100 flex flex-col transition-transform duration-300 ease-out ${
                 animating ? "translate-x-0" : "translate-x-full"}`}>
                 
                 {/* Header */}
                 <div className="px-4 py-4 border-b border-blue-100 flex justify-between items-center">
-                    <h2 className="text-black text-base font-semibold font-['Inter'] uppercase m-0">Logs</h2>
+                    <h2 className="text-black text-base font-semibold  uppercase m-0">Logs</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="p-2 rounded-lg outline outline-1 outline-offset-[-1px] outline-black/10  hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                             <Xicon className="size-4 text-black"/>
                         </button>
@@ -81,15 +81,15 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
                 {/* Table container */}
                 <div className="flex-1 flex flex-col border-t border-blue-100 overflow-hidden">
                     {/* Table header row */}
-                    <div className="flex bg-sky-50 px-4 py-2 shrink-0">
-                        <div className="w-20 text-xs font-medium uppercase text-black/60">Time</div>
-                        <div className="w-24 text-xs font-medium uppercase text-black/60">Status</div>
+                    <div className="flex bg-sky-50 px-4 py-2 shrink-0 gap-4">
+                        <div className="w-30 text-xs font-medium uppercase text-black/60">Time</div>
+                        <div className="w-34 text-xs font-medium uppercase text-black/60">Status</div>
                         <div className="w-24 text-xs font-medium uppercase text-black/60">Gen RPM</div>
                         <div className="w-24 text-xs font-medium uppercase text-black/60">Power (W)</div>
                         <div className="w-24 text-xs font-medium uppercase text-black/60">Voltage (V)</div>
                         <div className="w-24 text-xs font-medium uppercase text-black/60">Current (A)</div>
                         <div className="w-24 text-xs font-medium uppercase text-black/60">Wave (m)</div>
-                        <div className="w-24 text-xs font-medium uppercase text-black/60">Freq (Hz)</div>
+                        <div className="w-20 text-xs font-medium uppercase text-black/60">Freq (Hz)</div>
                     </div>
 
                     {/* Table body (scrollable) */}
@@ -104,25 +104,29 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
                                 return (
                                     <div
                                         key={index}
-                                        className={`flex px-4 py-2 hover:bg-sky-50/50 transition-colors border-b border-gray-50 ${
+                                        className={`flex font-['Roboto_Mono'] text-xs text-black/80 px-4 py-2 gap-4 hover:bg-sky-50/50 transition-colors border-b border-gray-50 ${
                                             status === "Critical" ? "bg-red-50/40" : ""
                                         }`}
-                                        >
-                                            <div className="w-20 text-xs text-black">{log.ts}</div>
-                                            <div className="w-24 flex items-center gap-2">
-                                                <div className={`w-2 h-2 rounded-full ${statusDotClass(status)}`}>
-                                                    <span className="text-xs text-black">{status}</span>
-                                                </div>
-                                                <div className="w-24 text-xs text-black">{log.rpm}</div>
-                                                <div className="w-24 text-xs text-black">{log.power}</div>
-                                                <div className="w-24 text-xs text-black">{log.voltage}</div>
-                                                <div className="w-24 text-xs text-black">{log.current}</div>
-                                                <div className="w-24 text-xs text-black">{log.waveHeight.toFixed(2)}</div>
-                                                <div className="w-24 text-xs text-black">{log.waveFreq.toFixed(2)}</div>
-                                            </div>
-                                        </div>
-                );
-              })
+                                    >
+                                        {/* 1. Time Column (w-20) */}
+                                        <div className="w-30 text-[11px] text-black flex items-center">{log.ts}</div>
+                                        
+                                        {/* 2. Status Column (w-24) */}
+                                        <div className="w-34 flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${statusDotClass(status)}`} />
+                                            <span className="text-[11px] font-medium">{status}</span>
+                                        </div> 
+                                        
+                                        {/* 3. Data Columns (all w-24) */}
+                                        <div className="w-24 flex items-center whitespace-nowrap">{Number(log.rpm).toFixed(0)}</div>
+                                        <div className="w-24 flex items-center whitespace-nowrap">{Number(log.power).toFixed(0)}</div>
+                                        <div className="w-24 flex items-center whitespace-nowrap">{Number(log.voltage).toFixed(2)}</div>
+                                        <div className="w-24 flex items-center whitespace-nowrap">{Number(log.current).toFixed(2)}</div>
+                                        <div className="w-24 flex items-center whitespace-nowrap">{Number(log.waveHeight).toFixed(2)}</div>
+                                        <div className="w-20 flex items-center whitespace-nowrap">{Number(log.waveFreq).toFixed(2)}</div>
+                                    </div>
+                                );
+                            })
             )}
           </div>
           

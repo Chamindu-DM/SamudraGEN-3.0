@@ -20,6 +20,13 @@ export default function AppHeader({onOpenLogs}: AppHeaderProps) {
             <div className="size- flex justify-center items-center gap-2">
                 <LiveBadge />
                 <DatePicker onSelectDate={handleDateSelect} />
+                {/* 🚨 ADD THIS NEW BUTTON HERE 🚨 */}
+                <button
+                    onClick={onOpenLogs}
+                    className="h-8 px-3 py-2 rounded-lg outline outline-1 outline-offset-[-1px] outline-black/10 flex justify-center items-center gap-1.5 cursor-pointer hover:bg-gray-50 transition-colors bg-transparent border-none"
+                >
+                    <span className="text-black/80 text-xs font-semibold font-['Inter']">Open Logs</span>
+                </button>
             </div>
         </div>
     );

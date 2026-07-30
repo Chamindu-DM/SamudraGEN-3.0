@@ -2,6 +2,7 @@ import { Reading } from "../ui/Reading";
 import Arrow from "../../assets/ArrowUp.svg?react"
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
+import { useTelemetryStore } from "../../store/telemetryStore";
 
 type EChartsOption = echarts.EChartsOption;
 
@@ -14,7 +15,7 @@ const gaugeOption: EChartsOption = {
       startAngle: 180,
       endAngle: 0,
       min: 0,
-      max: 240,
+      max: 300,
       splitNumber: 6,         // Reduced splitNumber to prevent labels from overlapping
       itemStyle: {
         color: '#58D9F9',
@@ -98,6 +99,17 @@ const gaugeOption: EChartsOption = {
 };
 
 export function DailyMetrics() {
+  const latest = useTelemetryStore(state => state.latest);
+  const currentRpm = latest ? Number(latest.rpm.toFixed(0)) : 0;
+  const dynamicGaugeOption = {
+    ...gaugeOption,
+    series: [
+      {
+        ...(gaugeOption.series as any []) [0],
+        data: [{ value: currentRpm }]
+      }
+    ]
+  }
     return (
         <div className="w-full h-full flex flex-col justify-start items-start overflow-hidden gap-2">
                     <div className="self-stretch bg-white rounded-2xl outline outline-1 outline-offset-[-1px] outline-sky-500/20 inline-flex flex-col justify-start items-start">
@@ -130,14 +142,14 @@ export function DailyMetrics() {
                     <div className="self-stretch h-full p-4 inline-flex gap-1">
                         <div className="w-2/3 h-full">
                             <ReactECharts 
-                                option={gaugeOption} 
+                                option={dynamicGaugeOption} 
                                 style={{ height: '100%', width: '100%' }} 
                                 opts={{ renderer: 'canvas' }} 
                             />
                         </div>
                         <div className="w-1/3 inline-flex flex-col justify-start items-start">
                             <div className="h-full"></div>
-                            <Reading measurement="average" measureValue={104} measureUnit="rpm"/>
+                            <Reading measurement="average" measureValue={currentRpm} measureUnit="rpm"/>
                         </div>
                     </div>
             </div>
