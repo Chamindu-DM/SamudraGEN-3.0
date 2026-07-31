@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Reading } from "../ui/Reading";
 import Arrow from "../../assets/ArrowUp.svg?react"
 import ReactECharts from 'echarts-for-react';
@@ -100,7 +101,55 @@ const gaugeOption: EChartsOption = {
 
 export function DailyMetrics() {
   const latest = useTelemetryStore(state => state.latest);
+  const currentPower = latest ? Math.round(latest.power) : 0;
   const currentRpm = latest ? Number(latest.rpm.toFixed(0)) : 0;
+
+  const [powerStats, setPowerStats] = useState({ avg: 0, peak: 0, pctChange: 0});
+  const [rpmStats, setRpmStats] = useState({ avg: 0 });
+
+  useEffect(() => {
+    async function fetchStats() {
+        const now = new Date();
+        const twoHoursAgo = new Date(now.getTime() - 7200000);
+        const oneHourAgo = new Date(now.getTime() - 3600000);
+        const date = now.toISOString().split('T')[0];
+        const startTime = twoHoursAgo.toTimeString().split(' ')[0];
+        const midTime = oneHourAgo.toTimeString().split(' ')[0];
+        const endTime = now.toTimeString().split(' ')[0];
+
+        try {
+          const res = await fetch(`${import.meta.env.VITE_HISTORY_API_URL} ? date=${date}&startTime=${startTime}&endTime=${endTime}`);
+          const data = await res.json();
+          const records = data.records || [];
+
+          const prevHour = records.filter(r => r.ts < midTime);
+          const currHour = records.filter(r => r.ts >= midTime);
+
+          if (currHour.length > 0) {
+                // Power stats
+                const avgPower = currHour.reduce((s, r) => s + r.power, 0) / currHour.length;
+                const peakPower = Math.max(...currHour.map(r => r.power));
+                const prevAvgPower = prevHour.length > 0
+                    ? prevHour.reduce((s, r) => s + r.power, 0) / prevHour.length
+                    : avgPower;
+                const pctChange = prevAvgPower !== 0
+                    ? ((avgPower - prevAvgPower) / prevAvgPower) * 100
+                    : 0;
+                setPowerStats({ avg: avgPower, peak: peakPower, pctChange });
+                // RPM stats
+                const avgRpm = currHour.reduce((s, r) => s + r.rpm, 0) / currHour.length;
+                setRpmStats({ avg: Math.round(avgRpm) });
+            }
+        } catch (err) {
+            console.warn("Stats fetch failed:", err);
+        }
+    }
+    fetchStats();
+    const timer = setInterval(fetchStats, 60000);
+    return () => clearInterval(timer);
+}, []);
+
+
   const dynamicGaugeOption = {
     ...gaugeOption,
     series: [
@@ -120,18 +169,24 @@ export function DailyMetrics() {
                             <div className="w-full h-full p-2 bg-[#F4FAFF] rounded-lg outline outline-1 outline-blue-100 inline-flex flex-col justify-between items-start gap-1">
                     <div className="text-center justify-start text-black/60 text-[10px] font-medium font-['Inter'] uppercase">Current Power</div>
                     <div className="self-stretch inline-flex justify-between items-end">
-                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">24W</div>
+                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">{currentPower}W</div>
                         <div className="size- flex justify-center items-center gap-0.4">
-                            <div className="size-3 relative overflow-hidden">
-                                <Arrow className="size-2.5 text-green-800 stroke-green-800 stroke-[0.8px]" />
-                            </div>
-                            <div className="text-center justify-center text-green-800 text-xs font-medium font-['Inter'] uppercase">24%</div>
-                        </div>
+                              <div className="size-3 relative overflow-hidden">
+                                  <Arrow className={`size-2.5 stroke-[0.8px] ${
+                                      powerStats.pctChange >= 0
+                                      ? 'text-green-800 stroke-green-800'
+                                      : 'text-red-600 stroke-red-600 rotate-180'
+                                  }`} />
+                              </div>
+                              <div className={`text-center text-xs font-medium font-['Inter'] uppercase ${
+                                  powerStats.pctChange >= 0 ? 'text-green-800' : 'text-red-600'
+                              }`}>{Math.abs(powerStats.pctChange).toFixed(0)}%</div>
+                          </div>
                     </div>
                     </div>
                     <div className="self-stretch w-full inline-flex flex-col justify-start items-start gap-2">
-                        <Reading measurement="peak" measureValue={56} measureUnit="W" />
-                        <Reading measurement="average" measureValue={17} measureUnit="W"/>
+                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(0)} measureUnit="W" />
+                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(0)} measureUnit="W"/>
                     </div>
                 </div>
             </div>
@@ -149,7 +204,7 @@ export function DailyMetrics() {
                         </div>
                         <div className="w-1/3 inline-flex flex-col justify-start items-start">
                             <div className="h-full"></div>
-                            <Reading measurement="average" measureValue={currentRpm} measureUnit="rpm"/>
+                            <Reading measurement="average" measureValue={rpmStats.avg} measureUnit="rpm"/>
                         </div>
                     </div>
             </div>
