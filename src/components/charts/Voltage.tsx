@@ -5,60 +5,8 @@ import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
 import { useTelemetryStore } from "../../store/telemetryStore";
 
-export function WaveHeight() {
+export function Voltage() {
 
-    //const [chartOption, setChartOption] = useState<echarts.EChartsOption>({});
-
-    // useEffect(() => {
-    //     let data: {name: string; value: [string, number]}[] = [];
-    //     let now = new Date(2026, 7, 3);
-    //     let oneDay = 24*3600*1000;
-    //     let value = Math.random()*0.4;
-
-    //     function randomData(){
-    //         now = new Date(+now + oneDay);
-    //         value = value + Math.random()* 21 - 10;
-    //         return{
-    //             name : now.toString(),
-    //             value : [
-    //                 [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('/'),
-    //                 Math.round(value)
-    //             ] as [string, number]
-    //         };
-    //     }
-
-    //     for (var i=0; i<1000; i++){
-    //         data.push(randomData());
-    //     }
-
-    //     setChartOption({
-    //         tooltip: { trigger: 'axis' },
-    //         grid: {
-    //             top: 30,
-    //             right: 30,
-    //             bottom: 40,
-    //             left: 50
-    //         },
-    //         xAxis : { type: 'time', splitLine: {show: false}},
-    //         yAxis: { type: 'value', boundaryGap: [0, '100%'], splitLine: {show: false}},
-    //         series: [{ name: 'Fake Data', type: 'line', showSymbol: false, data:data}]
-    //     });
-
-    //     const timer = setInterval(() => {
-    //         for (var i=0; i<5; i++){
-    //             data.shift();
-    //             data.push(randomData());
-    //         }
-
-    //         setChartOption((prevOption) => ({
-    //             ...prevOption,
-    //             series: [{ data: [...data], type: 'line', showSymbol: false}]
-    //         }));
-    //     }, 1000);
-
-    //     return () => clearInterval(timer);
-    // }, []);
-    
     const [stats, setStats] = useState({ avg: 0, max: 0, pctChange: 0 });
 
     useEffect(() => {
@@ -82,11 +30,11 @@ export function WaveHeight() {
             const currHour = records.filter(r => r.ts >= midTime);
 
             if (currHour.length > 0) {
-                const avg = currHour.reduce((s, r) => s + r.waveHeight, 0) / currHour.length;
-                const max = Math.max(...currHour.map(r => r.waveHeight));
+                const avg = currHour.reduce((s, r) => s + r.voltage, 0) / currHour.length;
+                const max = Math.max(...currHour.map(r => r.voltage));
 
                 const prevAvg = prevHour.length > 0
-                    ? prevHour.reduce((s, r) => s + r.waveHeight, 0) / prevHour.length
+                    ? prevHour.reduce((s, r) => s + r.voltage, 0) / prevHour.length
                     : avg; // no prev data → 0% change
 
                 const pctChange = prevAvg !== 0
@@ -105,12 +53,13 @@ export function WaveHeight() {
 
 
     const history = useTelemetryStore((state) => state.history);
+    const latest = useTelemetryStore((state) => state.latest);
 
     const chartData = history.map((tick) => {
         const [h, m, s] = tick.ts.split(':').map(Number);
         const date = new Date();
         date.setHours(h, m, s, 0);
-        return { value: [date.getTime(), tick.waveHeight] };
+        return { value: [date.getTime(), tick.voltage] };
     });
 
 
@@ -137,20 +86,16 @@ export function WaveHeight() {
 
         yAxis: { type: 'value', boundaryGap: [0, '100%'], splitLine: { show: false }},
         series: [{
-            name: 'Wave Height',
+            name: 'Voltage',
             type: 'line',
             showSymbol: false,
             data: chartData,
         }],
     };
 
-    const avgHeight = history.length>0 ? history.reduce((sum, t) => sum+t.waveHeight,0)/history.length : 0;
-
-    const maxHeight = history.length > 0 ? Math.max(...history.map((t) => t.waveHeight)) : 0;
-
     return (
        <CommonCard
-        cardTitle="Wave Height"
+        cardTitle="Voltage"
         chartType={
             <ReactECharts
                 option={chartOption}
@@ -159,8 +104,8 @@ export function WaveHeight() {
                 />
         }
        >
-        <Reading measurement="Average Height" measureValue={stats.avg.toFixed(2)} measureUnit="m" percentChange={stats.pctChange} />
-        <Reading measurement="Maximum Height" measureValue={stats.max.toFixed(2)} measureUnit="m" />
+        <Reading measurement="Generator Voltage" measureValue={latest ? latest.voltage.toFixed(2) : '-'} measureUnit="V" />
+        <Reading measurement="Average Voltage" measureValue={stats.avg.toFixed(2)} measureUnit="V" percentChange={stats.pctChange} />
 
        </CommonCard>
     )

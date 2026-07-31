@@ -27,6 +27,7 @@ export interface TelemetryState {
   pushTick: (tick: TelemetryTick) => void;
   setConnected: (status: boolean) => void;
   clearHistory: () => void;
+  seedHistory: (ticks: TelemetryTick[]) => void;
 }
 
 export const useTelemetryStore = create<TelemetryState>((set) => ({
@@ -43,4 +44,8 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
   }),
   setConnected: (status) => set({ isConnected: status }),
   clearHistory: () => set({ history: [], latest: null }),
+  seedHistory: (ticks) => set((state) => {
+             if (state.history.length > 0) return state;
+             return { history: ticks, latest: ticks[ticks.length - 1] || null };
+           }),
 }));

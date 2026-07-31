@@ -5,16 +5,16 @@ import AppHeader from './components/layout/AppHeader'
 import { Simulation } from './components/charts/Simulation'
 import { DailyMetrics } from './components/charts/DailyMetrics'
 import { PowerOutputChart } from './components/charts/PowerOutputChart'
-import { VoltageCurrent } from './components/charts/VoltageCurrent'
-import { WaveFreq } from './components/charts/WaveFreq'
 import { WaveHeight } from './components/charts/WaveHeight'
 import { LogsPanel } from './components/ui/LogsPanel'
 import { useState } from 'react'
+import { Voltage } from './components/charts/Voltage'
+import { Current } from './components/charts/Current'
 
 function App() {
   const [isLogsPanelOpen, setIsLogsPanelOpen] = useState(false);
 
-  // 🚨 TEMPORARY: Simulate incoming data to test the LogsPanel 🚨
+  // TEMPORARY: Simulate incoming data to test the LogsPanel 
   useEffect(() => {
     const interval = setInterval(() => {
       // Create a fake tick
@@ -33,6 +33,31 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Backfill: fetch last 5 min from DB so charts aren't empty on load
+           useEffect(() => {
+             async function backfill() {
+               const now = new Date();
+               const fiveMinAgo = new Date(now.getTime() - 300000);
+               const date = now.toISOString().split('T')[0];
+               const startTime = fiveMinAgo.toTimeString().split(' ')[0];
+               const endTime = now.toTimeString().split(' ')[0];
+               try {
+                 const res = await fetch(
+                   `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
+                 );
+                 const data = await res.json();
+                 const records = data.records || [];
+                 if (records.length > 0) {
+                   useTelemetryStore.getState().seedHistory(records);
+                 }
+               } catch (err) {
+                 console.warn("Backfill failed (API may not be deployed yet):", err);
+               }
+             }
+             backfill();
+           }, []);
+
+
   return (
     <div className="w-screen h-screen bg-sky-50 flex flex-col justify-start items-start">
       <AppHeader onOpenLogs={() => setIsLogsPanelOpen(true)} />
@@ -41,8 +66,8 @@ function App() {
           <Simulation />
           <DailyMetrics />
           <PowerOutputChart />
-          <VoltageCurrent />
-          <WaveFreq />
+          <Voltage/>
+          <Current/>
           <WaveHeight />
         </div>
         <LogsPanel

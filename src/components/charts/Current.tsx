@@ -5,7 +5,7 @@ import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
 import { useTelemetryStore } from "../../store/telemetryStore";
 
-export function WaveHeight() {
+export function Current() {
 
     //const [chartOption, setChartOption] = useState<echarts.EChartsOption>({});
 
@@ -150,7 +150,7 @@ export function WaveHeight() {
 
     return (
        <CommonCard
-        cardTitle="Wave Height"
+        cardTitle="Current"
         chartType={
             <ReactECharts
                 option={chartOption}
