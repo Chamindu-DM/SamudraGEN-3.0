@@ -3,7 +3,7 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
-import { useTelemetryStore } from "../../store/telemetryStore";
+import { useTelemetryStore, type TelemetryTick } from "../../store/telemetryStore";
 
 export function WaveHeight() {
 
@@ -75,7 +75,7 @@ export function WaveHeight() {
                 `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
             );
             const data = await res.json();
-            const records = data.records || [];
+            const records: TelemetryTick[] = data.records || [];
 
             // Split: previous hour vs current hour
             const prevHour = records.filter(r => r.ts < midTime);
@@ -144,9 +144,7 @@ export function WaveHeight() {
         }],
     };
 
-    const avgHeight = history.length>0 ? history.reduce((sum, t) => sum+t.waveHeight,0)/history.length : 0;
 
-    const maxHeight = history.length > 0 ? Math.max(...history.map((t) => t.waveHeight)) : 0;
 
     return (
        <CommonCard

@@ -3,7 +3,7 @@ import { Reading } from "../ui/Reading";
 import Arrow from "../../assets/ArrowUp.svg?react"
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
-import { useTelemetryStore } from "../../store/telemetryStore";
+import { useTelemetryStore, type TelemetryTick } from "../../store/telemetryStore";
 
 type EChartsOption = echarts.EChartsOption;
 
@@ -120,7 +120,7 @@ export function DailyMetrics() {
         try {
           const res = await fetch(`${import.meta.env.VITE_HISTORY_API_URL} ? date=${date}&startTime=${startTime}&endTime=${endTime}`);
           const data = await res.json();
-          const records = data.records || [];
+          const records: TelemetryTick[] = data.records || [];
 
           const prevHour = records.filter(r => r.ts < midTime);
           const currHour = records.filter(r => r.ts >= midTime);
