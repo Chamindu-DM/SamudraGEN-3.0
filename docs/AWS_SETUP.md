@@ -253,6 +253,16 @@ export const handler = async (event) => {
   }
 
   const date = event.queryStringParameters?.date;
+  const startTime = event.queryStringParameters?.startTime;
+  const endTime = event.queryStringParameters?.endTime;
+
+  const keyCondition = startTime && endTime
+    ? "#d = :date AND ts BETWEEN :start AND :end"
+    : "#d = :date";
+
+  const expressionValues = startTime && endTime
+    ? { ":date": date, ":start": startTime, ":end": endTime }
+    : { ":date": date };
 
   if (!date) {
     return {
@@ -266,10 +276,10 @@ export const handler = async (event) => {
     const result = await docClient.send(
       new QueryCommand({
         TableName: TABLE_NAME,
-        KeyConditionExpression: "#d = :date",
+        KeyConditionExpression: keyCondition,
         ExpressionAttributeNames: { "#d": "date" },
-        ExpressionAttributeValues: { ":date": date },
-        ScanIndexForward: true, // oldest first
+        ExpressionAttributeValues: expressionValues,
+        ScanIndexForward: true,
       })
     );
 
