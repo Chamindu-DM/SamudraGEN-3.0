@@ -88,21 +88,29 @@ class OWSCSimulator {
     // Power = V × I
     const power = Math.round(this.voltage * this.current * 10) / 10;
 
-    // Timestamp in HH:MM:SS format (matching ESP32 firmware)
-    const ts = [
-      String(now.getHours()).padStart(2, "0"),
-      String(now.getMinutes()).padStart(2, "0"),
-      String(now.getSeconds()).padStart(2, "0"),
-    ].join(":");
+    // Timestamp in ISO-8601 format (matching ESP32 firmware)
+    const ts = now.toISOString();
+
+    const waveHeightCm = Math.round(this.waveHeight * 100);
+    const waveFreqHz = Math.round(this.waveFreq * 100) / 100;
+    
+    // Simulate distance sensor (assume sensor is 400cm above sea level)
+    const distanceCm = 400 - waveHeightCm;
 
     return {
+      deviceId: "SamudraGEN-ESP32S3-SIM",
       ts,
-      waveHeight: Math.round(this.waveHeight * 100) / 100,
-      waveFreq: Math.round(this.waveFreq * 100) / 100,
+      waveHeightCm,
+      waveFreqHz,
+      distanceCm,
       rpm: this.rpm,
       power,
       voltage: this.voltage,
       current: this.current,
+      relayMode: "AUTO",
+      relayState: "GRID",
+      wifiRssi: -65 + Math.round((Math.random() - 0.5) * 10),
+      sensorStatus: "OK"
     };
   }
 }
@@ -139,7 +147,7 @@ function publishTick() {
     if (err) {
       console.error("Publish error:", err);
     } else {
-      console.log(`📤 ${payload.ts} | H:${payload.waveHeight}m F:${payload.waveFreq}Hz | RPM:${payload.rpm} | ${payload.voltage}V × ${payload.current}A = ${payload.power}W`);
+      console.log(`📤 ${payload.ts} | H:${payload.waveHeightCm / 100}m F:${payload.waveFreqHz}Hz | RPM:${payload.rpm} | ${payload.voltage}V × ${payload.current}A = ${payload.power}W`);
     }
   });
 }

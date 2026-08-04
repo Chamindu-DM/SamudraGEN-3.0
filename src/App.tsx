@@ -14,23 +14,36 @@ import { Current } from './components/charts/Current'
 function App() {
   const [isLogsPanelOpen, setIsLogsPanelOpen] = useState(false);
 
-  // TEMPORARY: Simulate incoming data to test the LogsPanel 
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Create a fake tick
-      const fakeTick = {
-        ts: new Date().toLocaleTimeString('en-US', { hour12: false }), // HH:MM:SS
-        waveHeight: 1.2 + Math.random() * 0.5,
-        waveFreq: 0.15 + Math.random() * 0.05,
-        rpm: Math.floor(220 + Math.random() * 70), // Random RPM between 220-290
-        power: Math.floor(20 + Math.random() * 10),
-        voltage: 12 + Math.random() * 2,
-        current: 1.5 + Math.random() * 0.5,
+    // If AWS endpoint is configured, connect to real MQTT
+    if (import.meta.env.VITE_AWS_IOT_ENDPOINT) {
+      import('./services/mqttClient').then(({ connectMqttClient }) => {
+        connectMqttClient();
+      });
+
+      return () => {
+        import('./services/mqttClient').then(({ disconnectMqttClient }) => {
+          disconnectMqttClient();
+        });
       };
-      // Push it to the Zustand store!
-      useTelemetryStore.getState().pushTick(fakeTick);
-    }, 2000); // Every 2 seconds
-    return () => clearInterval(interval);
+    } else {
+      // Fallback: Simulate incoming data to test the LogsPanel 
+      const interval = setInterval(() => {
+        // Create a fake tick
+        const fakeTick = {
+          ts: new Date().toLocaleTimeString('en-US', { hour12: false }), // HH:MM:SS
+          waveHeight: 1.2 + Math.random() * 0.5,
+          waveFreq: 0.15 + Math.random() * 0.05,
+          rpm: Math.floor(220 + Math.random() * 70), // Random RPM between 220-290
+          power: Math.floor(20 + Math.random() * 10),
+          voltage: 12 + Math.random() * 2,
+          current: 1.5 + Math.random() * 0.5,
+        };
+        // Push it to the Zustand store!
+        useTelemetryStore.getState().pushTick(fakeTick);
+      }, 2000); // Every 2 seconds
+      return () => clearInterval(interval);
+    }
   }, []);
 
   // Backfill: fetch last 5 min from DB so charts aren't empty on load

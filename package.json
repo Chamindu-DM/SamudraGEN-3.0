@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity": "^3.750.0",
+    "@aws-sdk/credential-provider-cognito-identity": "^3.750.0",
     "@tailwindcss/vite": "^4.3.2",
+    "aws-iot-device-sdk-v2": "^1.19.4",
     "echarts": "^6.1.0",
     "echarts-for-react": "^3.0.6",
     "mqtt": "^5.15.2",
