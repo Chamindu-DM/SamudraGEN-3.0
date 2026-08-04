@@ -113,12 +113,12 @@ export function DailyMetrics() {
         const twoHoursAgo = new Date(now.getTime() - 7200000);
         const oneHourAgo = new Date(now.getTime() - 3600000);
         const date = now.toISOString().split('T')[0];
-        const startTime = twoHoursAgo.toTimeString().split(' ')[0];
-        const midTime = oneHourAgo.toTimeString().split(' ')[0];
-        const endTime = now.toTimeString().split(' ')[0];
+        const startTime = twoHoursAgo.toISOString();
+        const midTime = oneHourAgo.toISOString();
+        const endTime = now.toISOString();
 
         try {
-          const res = await fetch(`${import.meta.env.VITE_HISTORY_API_URL} ? date=${date}&startTime=${startTime}&endTime=${endTime}`);
+          const res = await fetch(`${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`);
           const data = await res.json();
           const records: TelemetryTick[] = data.records || [];
 

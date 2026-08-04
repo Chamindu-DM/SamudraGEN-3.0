@@ -38,12 +38,14 @@ export function DatePicker({ onSelectDate }: DatePickerProps) {
         async function fetchStoredDates() {
             setLoading(true);
             try {
-                const apiUrl = import.meta.env.VITE_HISTORY_API_URL;
-                const res = await fetch(`${apiUrl}/dates`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setAvailableDates(data.dates || []);
+                // Generate last 7 days locally (since /dates endpoint doesn't exist)
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toISOString().split('T')[0]);
                 }
+                setAvailableDates(dates);
             } catch (err) {
                 console.error("Failed to fetch available dates", err);
             } finally {

@@ -29,7 +29,7 @@ export function OceanSimulation() {
         renderer.setSize(rect.width, rect.height);
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.type = THREE.PCFShadowMap;
         container.appendChild(renderer.domElement);
 
         const controls = new OrbitControls(camera, renderer.domElement);
@@ -349,7 +349,7 @@ export function OceanSimulation() {
 
         // --- WAVE & PHYSICS LOGIC ---
         let time = 0;
-        const clock = new THREE.Clock();
+        let previousTime = performance.now();
 
         const waveAmplitude = 1.5;
         const waveFrequency = 1.2;
@@ -366,10 +366,11 @@ export function OceanSimulation() {
         let animationId: number;
 
         // --- ANIMATION LOOP ---
-        function animate() {
+        function animate(currentTime: number) {
             animationId = requestAnimationFrame(animate);
 
-            const delta = clock.getDelta();
+            const delta = (currentTime - previousTime) / 1000;
+            previousTime = currentTime;
             time += delta;
 
             const positions = water.geometry.attributes.position;
