@@ -52,8 +52,8 @@ function App() {
                const now = new Date();
                const fiveMinAgo = new Date(now.getTime() - 300000);
                const date = now.toISOString().split('T')[0];
-               const startTime = fiveMinAgo.toTimeString().split(' ')[0];
-               const endTime = now.toTimeString().split(' ')[0];
+               const startTime = fiveMinAgo.toISOString();
+               const endTime = now.toISOString();
                try {
                  const res = await fetch(
                    `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`

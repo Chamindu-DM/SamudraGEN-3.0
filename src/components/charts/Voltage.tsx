@@ -15,9 +15,9 @@ export function Voltage() {
             const twoHoursAgo = new Date(now.getTime() - 7200000); // 2 hours
             const oneHourAgo = new Date(now.getTime() - 3600000);  // 1 hour
             const date = now.toISOString().split('T')[0];
-            const startTime = twoHoursAgo.toTimeString().split(' ')[0];
-            const midTime = oneHourAgo.toTimeString().split(' ')[0];
-            const endTime = now.toTimeString().split(' ')[0];
+            const startTime = twoHoursAgo.toISOString();
+            const midTime = oneHourAgo.toISOString();
+            const endTime = now.toISOString();
 
             const res = await fetch(
                 `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`

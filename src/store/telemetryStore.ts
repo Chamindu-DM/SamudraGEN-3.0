@@ -22,19 +22,39 @@ export interface TelemetryState {
 
   // Connection status
   isConnected: boolean;
+  
+  // Historical Logs
+  historicalMode: boolean;
+  historicalLogs: TelemetryTick[];
+  isFetchingHistory: boolean;
+  startTime: string; // HH:mm
+  endTime: string;   // HH:mm
 
   // Actions
   pushTick: (tick: TelemetryTick) => void;
   setConnected: (status: boolean) => void;
   clearHistory: () => void;
   seedHistory: (ticks: TelemetryTick[]) => void;
+  
+  // Historical Actions
+  setHistoricalMode: (mode: boolean) => void;
+  setHistoricalLogs: (logs: TelemetryTick[]) => void;
+  setIsFetchingHistory: (isFetching: boolean) => void;
+  setTimeRange: (start: string, end: string) => void;
 }
 
-export const useTelemetryStore = create<TelemetryState>((set) => ({
+export const useTelemetryStore = create<TelemetryState>((set, _get) => ({
   latest: null,
   history: [],
   maxHistory: 200,
   isConnected: false,
+  
+  historicalMode: false,
+  historicalLogs: [],
+  isFetchingHistory: false,
+  startTime: "00:00",
+  endTime: "23:59",
+  
   pushTick: (tick) => set((state) => {
     const newHistory = [...state.history, tick].slice(-state.maxHistory);
     return {
@@ -48,4 +68,9 @@ export const useTelemetryStore = create<TelemetryState>((set) => ({
              if (state.history.length > 0) return state;
              return { history: ticks, latest: ticks[ticks.length - 1] || null };
            }),
+           
+  setHistoricalMode: (mode) => set({ historicalMode: mode }),
+  setHistoricalLogs: (logs) => set({ historicalLogs: logs }),
+  setIsFetchingHistory: (isFetching) => set({ isFetchingHistory: isFetching }),
+  setTimeRange: (start, end) => set({ startTime: start, endTime: end }),
 }));

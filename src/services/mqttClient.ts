@@ -3,6 +3,7 @@ import { mqtt, auth, io, iot } from 'aws-iot-device-sdk-v2/dist/browser';
 import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand } from '@aws-sdk/client-cognito-identity';
 
 let connection: mqtt.MqttClientConnection | null = null;
+let isConnecting = false;
 
 function extractHHMMSS(isoString: string): string {
   try {
@@ -18,7 +19,8 @@ function extractHHMMSS(isoString: string): string {
 }
 
 export async function connectMqttClient() {
-  if (connection) return; // Already connected or connecting
+  if (connection || isConnecting) return; // Already connected or connecting
+  isConnecting = true;
 
   const endpoint = import.meta.env.VITE_AWS_IOT_ENDPOINT;
   const region = import.meta.env.VITE_AWS_REGION;
@@ -55,7 +57,8 @@ export async function connectMqttClient() {
     const provider = new auth.StaticCredentialProvider({
       aws_access_id: credentials.AccessKeyId,
       aws_secret_key: credentials.SecretKey,
-      aws_sts_token: credentials.SessionToken
+      aws_sts_token: credentials.SessionToken,
+      aws_region: region
     });
 
     const clientBootstrap = new io.ClientBootstrap();
@@ -121,10 +124,12 @@ export async function connectMqttClient() {
     // Subscribe to telemetry topic
     await connection.subscribe(topic, mqtt.QoS.AtLeastOnce);
     console.log(`[MQTT] Subscribed to ${topic}`);
+    isConnecting = false;
 
   } catch (error) {
     console.error("[MQTT] Connection failed", error);
     useTelemetryStore.getState().setConnected(false);
+    isConnecting = false;
   }
 }
 
