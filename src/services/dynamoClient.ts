@@ -85,3 +85,73 @@ export async function fetchHistoricalData(
     nextKey: null, // Frontend pagination handles the rest
   };
 }
+
+export async function fetchLast24HoursPowerData(): Promise<{ ts: string, power: number }[]> {
+  const client = getDynamoClient();
+  if (!client) throw new Error("DynamoDB Client not initialized");
+
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 3600 * 1000);
+  
+  // The database partitions are in UTC
+  const partitionsToFetch = [
+    yesterday.toISOString().split('T')[0],
+    now.toISOString().split('T')[0]
+  ];
+
+  // Unique partitions to avoid duplicate fetches if now and yesterday are the same UTC day
+  const uniquePartitions = [...new Set(partitionsToFetch)];
+  
+  let allItems: { ts: string, power: number }[] = [];
+  const twentyFourHoursAgo = now.getTime() - 24 * 3600 * 1000;
+
+  for (const date of uniquePartitions) {
+    let lastKey: any | undefined = undefined;
+    let hasMore = true;
+
+    while (hasMore) {
+      const command = new QueryCommand({
+        TableName: "SamudraGEN-Telemetry",
+        KeyConditionExpression: "#pk = :date",
+        ExpressionAttributeNames: {
+          "#pk": "date",
+          "#ts": "ts",
+          "#p": "power"
+        },
+        ExpressionAttributeValues: {
+          ":date": { S: date },
+        },
+        ProjectionExpression: "#ts, #p",
+        ScanIndexForward: true, // get oldest first so the chart plots left to right
+        ExclusiveStartKey: lastKey,
+      });
+
+      try {
+        const response = await client.send(command);
+        if (response.Items) {
+            for (const item of response.Items) {
+                const unmarshalled = unmarshall(item) as TelemetryTick;
+                const itemTime = new Date(unmarshalled.ts).getTime();
+                if (itemTime >= twentyFourHoursAgo) {
+                    allItems.push({
+                        ts: unmarshalled.ts,
+                        power: Number(unmarshalled.power) || 0
+                    });
+                }
+            }
+        }
+        
+        lastKey = response.LastEvaluatedKey;
+        if (!lastKey) hasMore = false;
+      } catch (error) {
+        console.error(`Error fetching 24h power data for ${date}:`, error);
+        hasMore = false;
+      }
+    }
+  }
+
+  // Sort chronologically (left to right for the chart)
+  allItems.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+
+  return allItems;
+}
