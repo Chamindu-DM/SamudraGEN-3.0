@@ -91,7 +91,7 @@ export function DatePicker({ onSelectDate }: DatePickerProps) {
         <div className="relative inline-block" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="w-48 h-8 px-3 py-2 rounded-lg outline outline-1 outline-offset-[-1px] outline-black/10 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
+                className="w-45 h-8 px-3 py-2 rounded-lg outline outline-1 outline-offset-[-1px] outline-black/10 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
             >
                 <span className="text-black/80 text-xs font-semibold font-['Inter'] truncate">
                     {formattedDisplay}
@@ -101,7 +101,7 @@ export function DatePicker({ onSelectDate }: DatePickerProps) {
 
             {/* Dropdown Menu */}
             {isOpen && (
-                <div className="w-48 p-1 left-0 top-[36px] absolute bg-white rounded-lg shadow-[0px_4px_12px_0px_rgba(0,0,0,0.20)] outline outline-1 outline-offset-[-1px] outline-black/10 flex flex-col gap-1 z-50">
+                <div className="w-45 p-1 left-0 top-[36px] absolute bg-white rounded-lg shadow-[0px_4px_12px_0px_rgba(0,0,0,0.20)] outline outline-1 outline-offset-[-1px] outline-black/10 flex flex-col gap-1 z-50">
                     {loading ? (
                         <div className="p-2 text-center text-xs text-black/50">Loading dates...</div>
                     ) : availableDates.length === 0 ? (

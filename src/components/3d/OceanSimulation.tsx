@@ -366,7 +366,7 @@ export function OceanSimulation() {
         let animationId: number;
 
         // --- ANIMATION LOOP ---
-        function animate(currentTime: number) {
+        function animate(currentTime: number = performance.now()) {
             animationId = requestAnimationFrame(animate);
 
             const delta = (currentTime - previousTime) / 1000;
