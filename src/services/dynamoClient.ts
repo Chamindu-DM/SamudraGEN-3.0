@@ -29,7 +29,7 @@ export function getDynamoClient() {
 
 export async function fetchHistoricalData(
   localDateStr: string,
-  token: any = null // Keeping for signature compat, but unused now
+  _token: any = null // Keeping for signature compat, but unused now
 ): Promise<{ items: TelemetryTick[]; nextKey: any | null }> {
   const client = getDynamoClient();
   if (!client) throw new Error("DynamoDB Client not initialized");

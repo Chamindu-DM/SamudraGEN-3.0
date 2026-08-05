@@ -43,7 +43,7 @@ export interface TelemetryState {
   setTimeRange: (start: string, end: string) => void;
 }
 
-export const useTelemetryStore = create<TelemetryState>((set, get) => ({
+export const useTelemetryStore = create<TelemetryState>((set, _get) => ({
   latest: null,
   history: [],
   maxHistory: 200,
