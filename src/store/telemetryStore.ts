@@ -10,7 +10,9 @@ export interface TelemetryTick {
   power: number;       // watts (V × I)
   voltage: number;     // volts
   current: number;     // amps
+  relayMode?: string;  // "battery" | "load"
 }
+
 
 export interface TelemetryState {
   // Latest single reading (for gauges, badges, Reading components)
