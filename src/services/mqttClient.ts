@@ -143,3 +143,18 @@ export async function disconnectMqttClient() {
     connection = null;
   }
 }
+
+export async function publishControlCommand(mode:'battery' | 'load') {
+  if(!connection){
+    console.error("MQTT not connected");
+    return;
+  }
+
+  const payload = JSON.stringify({ relay: mode });
+  try{
+    await connection.publish("ocean/wave/control", payload, mqtt.QoS.AtLeastOnce);
+    console.log(`[MQTT] Published control command: ${payload}`);
+  } catch (err) {
+    console.error("[MQTT] Failed to publish control command", err);
+  }
+}
