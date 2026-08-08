@@ -62,7 +62,14 @@ export async function fetchHistoricalData(
 
       try {
         const response = await client.send(command);
-        const parsedItems = (response.Items || []).map((item) => unmarshall(item) as TelemetryTick);
+        const parsedItems = (response.Items || []).map((item) => {
+          const raw = unmarshall(item);
+          return {
+            ...raw,
+            waveHeight: raw.waveHeightCm ?? raw.waveHeight ?? 0,
+            waveFreq: raw.waveFreqHz ?? raw.waveFreq ?? 0,
+          } as TelemetryTick;
+        });
         allItems.push(...parsedItems);
         
         lastKey = response.LastEvaluatedKey;
