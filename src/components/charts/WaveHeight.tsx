@@ -75,7 +75,12 @@ export function WaveHeight() {
                 `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
             );
             const data = await res.json();
-            const records: TelemetryTick[] = data.records || [];
+            const rawRecords = data.records || [];
+            const records: TelemetryTick[] = rawRecords.map((r: any) => ({
+                ...r,
+                waveHeight: r.waveHeightCm ?? r.waveHeight ?? 0,
+                waveFreq: r.waveFreqHz ?? r.waveFreq ?? 0
+            }));
 
             // Split: previous hour vs current hour
             const prevHour = records.filter(r => r.ts < midTime);
@@ -157,8 +162,8 @@ export function WaveHeight() {
                 />
         }
        >
-        <Reading measurement="Average Height" measureValue={stats.avg.toFixed(2)} measureUnit="m" percentChange={stats.pctChange} />
-        <Reading measurement="Maximum Height" measureValue={stats.max.toFixed(2)} measureUnit="m" />
+        <Reading measurement="Average Height" measureValue={stats.avg.toFixed(3)} measureUnit="m" percentChange={stats.pctChange} />
+        <Reading measurement="Maximum Height" measureValue={stats.max.toFixed(3)} measureUnit="m" />
 
        </CommonCard>
     )

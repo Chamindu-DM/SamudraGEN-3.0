@@ -104,8 +104,8 @@ export function Voltage() {
                 />
         }
        >
-        <Reading measurement="Generator Voltage" measureValue={latest ? latest.voltage.toFixed(2) : '-'} measureUnit="V" />
-        <Reading measurement="Average Voltage" measureValue={stats.avg.toFixed(2)} measureUnit="V" percentChange={stats.pctChange} />
+        <Reading measurement="Generator Voltage" measureValue={latest ? latest.voltage.toFixed(3) : '-'} measureUnit="V" />
+        <Reading measurement="Average Voltage" measureValue={stats.avg.toFixed(3)} measureUnit="V" percentChange={stats.pctChange} />
 
        </CommonCard>
     )
