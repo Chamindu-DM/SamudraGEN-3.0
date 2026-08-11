@@ -110,7 +110,8 @@ export async function connectMqttClient() {
           rpm: data.rpm || 0,
           power: data.power || 0,
           voltage: data.voltage || 0,
-          current: data.current || 0
+          current: data.current || 0,
+          relayMode: data.relayMode
         };
 
         useTelemetryStore.getState().pushTick(tick);
