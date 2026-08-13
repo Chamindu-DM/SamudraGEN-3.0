@@ -180,13 +180,13 @@ export function DailyMetrics() {
                               </div>
                               <div className={`text-center text-xs font-medium font-['Inter'] uppercase ${
                                   powerStats.pctChange >= 0 ? 'text-green-800' : 'text-red-600'
-                              }`}>{Math.abs(powerStats.pctChange).toFixed(0)}%</div>
+                              }`}>{Math.abs(powerStats.pctChange).toFixed(2)}%</div>
                           </div>
                     </div>
                     </div>
                     <div className="self-stretch w-full inline-flex flex-col justify-start items-start gap-2">
-                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(0)} measureUnit="W" />
-                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(0)} measureUnit="W"/>
+                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(3)} measureUnit="W" />
+                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(3)} measureUnit="W"/>
                     </div>
                 </div>
             </div>

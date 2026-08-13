@@ -102,7 +102,7 @@ export function PowerOutputChart() {
             
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
-                    <div className="text-sm font-semibold text-sky-600 animate-pulse">Loading DB Data...</div>
+                    <div className="text-sm font-semibold text-black/40 animate-pulse">Loading DB Data...</div>
                 </div>
             )}
             
