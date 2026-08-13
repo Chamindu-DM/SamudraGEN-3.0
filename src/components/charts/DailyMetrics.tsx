@@ -101,8 +101,8 @@ const gaugeOption: EChartsOption = {
 
 export function DailyMetrics() {
   const latest = useTelemetryStore(state => state.latest);
-  const currentPower = latest ? Math.round(latest.power) : 0;
-  const currentRpm = latest ? Number(latest.rpm.toFixed(0)) : 0;
+  const currentPower = latest ? latest.power : 0;
+  const currentRpm = latest ? latest.rpm : 0;
 
   const [powerStats, setPowerStats] = useState({ avg: 0, peak: 0, pctChange: 0});
   const [rpmStats, setRpmStats] = useState({ avg: 0 });
@@ -138,7 +138,7 @@ export function DailyMetrics() {
                 setPowerStats({ avg: avgPower, peak: peakPower, pctChange });
                 // RPM stats
                 const avgRpm = currHour.reduce((s, r) => s + r.rpm, 0) / currHour.length;
-                setRpmStats({ avg: Math.round(avgRpm) });
+                setRpmStats({ avg: avgRpm });
             }
         } catch (err) {
             console.warn("Stats fetch failed:", err);
@@ -169,7 +169,7 @@ export function DailyMetrics() {
                             <div className="w-full h-full p-2 bg-[#F4FAFF] rounded-lg outline outline-1 outline-blue-100 inline-flex flex-col justify-between items-start gap-1">
                     <div className="text-center justify-start text-black/60 text-[10px] font-medium font-['Inter'] uppercase">Current Power</div>
                     <div className="self-stretch inline-flex justify-between items-end">
-                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">{currentPower}W</div>
+                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">{currentPower.toFixed(2)}W</div>
                         <div className="size- flex justify-center items-center gap-0.4">
                               <div className="size-3 relative overflow-hidden">
                                   <Arrow className={`size-2.5 stroke-[0.8px] ${
@@ -185,8 +185,8 @@ export function DailyMetrics() {
                     </div>
                     </div>
                     <div className="self-stretch w-full inline-flex flex-col justify-start items-start gap-2">
-                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(3)} measureUnit="W" />
-                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(3)} measureUnit="W"/>
+                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(2)} measureUnit="W" />
+                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(2)} measureUnit="W"/>
                     </div>
                 </div>
             </div>

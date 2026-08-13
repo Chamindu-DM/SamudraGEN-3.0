@@ -41,9 +41,7 @@ export function PowerOutputChart() {
     const option: echarts.EChartsOption = {
       tooltip: {
         trigger: 'axis',
-        position: function (pt) {
-          return [pt[0], '10%'];
-        }
+        confine: true
       },
       title: {
         show: false
