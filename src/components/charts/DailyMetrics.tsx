@@ -204,7 +204,7 @@ export function DailyMetrics() {
                         </div>
                         <div className="w-1/3 inline-flex flex-col justify-start items-start">
                             <div className="h-full"></div>
-                            <Reading measurement="average" measureValue={rpmStats.avg} measureUnit="rpm"/>
+                            <Reading measurement="average" measureValue={rpmStats.avg.toFixed()} measureUnit="rpm"/>
                         </div>
                     </div>
             </div>
