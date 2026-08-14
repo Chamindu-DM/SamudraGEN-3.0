@@ -28,7 +28,7 @@ export function Reading({ measurement, measureValue, measureUnit, percentChange 
                     </div>
                     <div className={`text-center justify-center text-green-800 text-xs font-medium font-['Inter'] uppercase
                         ${isPositive ? 'text-green-800' : 'text-red-600'}`}>
-                            {Math.abs(percentChange).toFixed(0)}%
+                            {Math.abs(percentChange ?? 0).toFixed(0)}%
                     </div>
                 </div>
                 )}

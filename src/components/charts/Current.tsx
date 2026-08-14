@@ -105,8 +105,8 @@ export function Current() {
                 />
         }
        >
-        <Reading measurement="Generator Current" measureValue={latest ? latest.current.toFixed(3) : '-'} measureUnit="A" />
-        <Reading measurement="Average Current" measureValue={stats.avg.toFixed(3)} measureUnit="A" percentChange={stats.pctChange} />
+        <Reading measurement="Generator Current" measureValue={latest ? (latest.current ?? 0).toFixed(3) : '-'} measureUnit="A" />
+        <Reading measurement="Average Current" measureValue={(stats.avg ?? 0).toFixed(3)} measureUnit="A" percentChange={stats.pctChange} />
 
        </CommonCard>
     )

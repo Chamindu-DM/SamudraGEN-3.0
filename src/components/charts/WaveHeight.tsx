@@ -162,8 +162,8 @@ export function WaveHeight() {
                 />
         }
        >
-        <Reading measurement="Average Height" measureValue={stats.avg.toFixed(3)} measureUnit="m" percentChange={stats.pctChange} />
-        <Reading measurement="Maximum Height" measureValue={stats.max.toFixed(3)} measureUnit="m" />
+        <Reading measurement="Average Height" measureValue={(stats.avg ?? 0).toFixed(3)} measureUnit="m" percentChange={stats.pctChange} />
+        <Reading measurement="Maximum Height" measureValue={(stats.max ?? 0).toFixed(3)} measureUnit="m" />
 
        </CommonCard>
     )

@@ -101,8 +101,8 @@ const gaugeOption: EChartsOption = {
 
 export function DailyMetrics() {
   const latest = useTelemetryStore(state => state.latest);
-  const currentPower = latest ? latest.power : 0;
-  const currentRpm = latest ? latest.rpm : 0;
+  const currentPower = latest?.power ?? 0;
+  const currentRpm = latest?.rpm ?? 0;
 
   const [powerStats, setPowerStats] = useState({ avg: 0, peak: 0, pctChange: 0});
   const [rpmStats, setRpmStats] = useState({ avg: 0 });
@@ -169,7 +169,7 @@ export function DailyMetrics() {
                             <div className="w-full h-full p-2 bg-[#F4FAFF] rounded-lg outline outline-1 outline-blue-100 inline-flex flex-col justify-between items-start gap-1">
                     <div className="text-center justify-start text-black/60 text-[10px] font-medium font-['Inter'] uppercase">Current Power</div>
                     <div className="self-stretch inline-flex justify-between items-end">
-                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">{currentPower.toFixed(2)}W</div>
+                        <div className="text-center justify-start text-black text-5xl font-semibold font-['Inter']">{(currentPower ?? 0).toFixed(2)}W</div>
                         <div className="size- flex justify-center items-center gap-0.4">
                               <div className="size-3 relative overflow-hidden">
                                   <Arrow className={`size-2.5 stroke-[0.8px] ${
@@ -180,13 +180,13 @@ export function DailyMetrics() {
                               </div>
                               <div className={`text-center text-xs font-medium font-['Inter'] uppercase ${
                                   powerStats.pctChange >= 0 ? 'text-green-800' : 'text-red-600'
-                              }`}>{Math.abs(powerStats.pctChange).toFixed(2)}%</div>
+                              }`}>{Math.abs(powerStats.pctChange ?? 0).toFixed(2)}%</div>
                           </div>
                     </div>
                     </div>
                     <div className="self-stretch w-full inline-flex flex-col justify-start items-start gap-2">
-                        <Reading measurement="peak" measureValue={powerStats.peak.toFixed(2)} measureUnit="W" />
-                        <Reading measurement="average" measureValue={powerStats.avg.toFixed(2)} measureUnit="W"/>
+                        <Reading measurement="peak" measureValue={(powerStats.peak ?? 0).toFixed(2)} measureUnit="W" />
+                        <Reading measurement="average" measureValue={(powerStats.avg ?? 0).toFixed(2)} measureUnit="W"/>
                     </div>
                 </div>
             </div>
@@ -204,7 +204,7 @@ export function DailyMetrics() {
                         </div>
                         <div className="w-1/3 inline-flex flex-col justify-start items-start">
                             <div className="h-full"></div>
-                            <Reading measurement="average" measureValue={rpmStats.avg.toFixed()} measureUnit="rpm"/>
+                            <Reading measurement="average" measureValue={(rpmStats.avg ?? 0).toFixed()} measureUnit="rpm"/>
                         </div>
                     </div>
             </div>
