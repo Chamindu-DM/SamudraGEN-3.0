@@ -69,33 +69,36 @@ export async function connectMqttClient() {
 
     const config = configBuilder.build();
     const client = new mqtt.MqttClient(clientBootstrap);
-    connection = client.new_connection(config);
+    const conn = client.new_connection(config);
+    connection = conn;
 
-    connection.on('connect', () => {
+    conn.on('connect', () => {
       console.log("[MQTT] Connected to AWS IoT Core");
       useTelemetryStore.getState().setConnected(true);
     });
 
-    connection.on('interrupt', (error) => {
+    conn.on('interrupt', (error) => {
       console.log("[MQTT] Connection interrupted:", error);
       useTelemetryStore.getState().setConnected(false);
     });
 
-    connection.on('resume', (returnCode, sessionPresent) => {
+    conn.on('resume', (returnCode, sessionPresent) => {
       console.log(`[MQTT] Connection resumed (return code: ${returnCode}, session present: ${sessionPresent})`);
       useTelemetryStore.getState().setConnected(true);
       // Resubscribe if session is not present
       if (!sessionPresent) {
-        connection?.subscribe(topic, mqtt.QoS.AtLeastOnce);
+        conn.subscribe(topic, mqtt.QoS.AtLeastOnce).catch(err => {
+          console.warn("[MQTT] Resubscribe failed:", err);
+        });
       }
     });
 
-    connection.on('disconnect', () => {
+    conn.on('disconnect', () => {
       console.log("[MQTT] Disconnected");
       useTelemetryStore.getState().setConnected(false);
     });
 
-    connection.on('message', (_receivedTopic, payload) => {
+    conn.on('message', (_receivedTopic, payload) => {
       try {
         const messageStr = new TextDecoder("utf-8").decode(payload);
         const data = JSON.parse(messageStr);
@@ -120,11 +123,19 @@ export async function connectMqttClient() {
       }
     });
 
-    await connection.connect();
+    await conn.connect();
     
-    // Subscribe to telemetry topic
-    await connection.subscribe(topic, mqtt.QoS.AtLeastOnce);
-    console.log(`[MQTT] Subscribed to ${topic}`);
+    // Guard: connection may have been disconnected during the await
+    if (connection) {
+      try {
+        await connection.subscribe(topic, mqtt.QoS.AtLeastOnce);
+        console.log(`[MQTT] Subscribed to ${topic}`);
+      } catch (subErr) {
+        console.warn("[MQTT] Subscribe failed (will retry on reconnect):", subErr);
+      }
+    } else {
+      console.warn("[MQTT] Connection lost before subscribe could complete");
+    }
     isConnecting = false;
 
   } catch (error) {

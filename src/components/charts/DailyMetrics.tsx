@@ -74,8 +74,8 @@ const gaugeOption: EChartsOption = {
         borderRadius: 4,
         offsetCenter: [0, '25%'], // Moved up slightly to not overlap the center pointer base
         valueAnimation: true,
-        formatter: function (value: number) {
-          return '{value|' + value.toFixed(0) + '}{unit|RPM}';
+        formatter: function (value: number | null | undefined) {
+          return '{value|' + (value ?? 0).toFixed(0) + '}{unit|RPM}';
         },
         rich: {
           value: {
