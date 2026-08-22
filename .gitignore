@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .env
 *SamudraGEN_ESP32S3.cpp
+Multimeter_Readings
+debug_frames
+multimeter_extractor/input_videos/*.mp4
+multimeter_extractor/debug_frames/
