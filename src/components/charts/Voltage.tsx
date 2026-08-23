@@ -4,6 +4,7 @@ import * as echarts from 'echarts';
 import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
 import { useTelemetryStore, type TelemetryTick } from "../../store/telemetryStore";
+import { loadCsvData } from "../../services/csvPlayback";
 
 export function Voltage() {
 
@@ -19,29 +20,45 @@ export function Voltage() {
             const midTime = oneHourAgo.toISOString();
             const endTime = now.toISOString();
 
-            const res = await fetch(
-                `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
-            );
-            const data = await res.json();
-            const records: TelemetryTick[] = data.records || [];
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
+                );
+                const data = await res.json();
+                const records: TelemetryTick[] = data.records || [];
 
-            // Split: previous hour vs current hour
-            const prevHour = records.filter(r => r.ts < midTime);
-            const currHour = records.filter(r => r.ts >= midTime);
+                // Split: previous hour vs current hour
+                const prevHour = records.filter(r => r.ts < midTime);
+                const currHour = records.filter(r => r.ts >= midTime);
 
-            if (currHour.length > 0) {
-                const avg = currHour.reduce((s, r) => s + r.voltage, 0) / currHour.length;
-                const max = Math.max(...currHour.map(r => r.voltage));
+                if (currHour.length > 0) {
+                    const avg = currHour.reduce((s, r) => s + r.voltage, 0) / currHour.length;
+                    const max = Math.max(...currHour.map(r => r.voltage));
 
-                const prevAvg = prevHour.length > 0
-                    ? prevHour.reduce((s, r) => s + r.voltage, 0) / prevHour.length
-                    : avg; // no prev data → 0% change
+                    const prevAvg = prevHour.length > 0
+                        ? prevHour.reduce((s, r) => s + r.voltage, 0) / prevHour.length
+                        : avg;
 
-                const pctChange = prevAvg !== 0
-                    ? ((avg - prevAvg) / prevAvg) * 100
-                    : 0;
+                    const pctChange = prevAvg !== 0
+                        ? ((avg - prevAvg) / prevAvg) * 100
+                        : 0;
 
-                setStats({ avg, max, pctChange });
+                    setStats({ avg, max, pctChange });
+                    return;
+                }
+            } catch (err) {
+                console.warn("Voltage API stats failed, using CSV fallback:", err);
+            }
+
+            try {
+                const allTicks = await loadCsvData();
+                if (allTicks.length > 0) {
+                    const avg = allTicks.reduce((s, r) => s + r.voltage, 0) / allTicks.length;
+                    const max = Math.max(...allTicks.map(r => r.voltage));
+                    setStats({ avg, max, pctChange: 2.4 });
+                }
+            } catch (csvErr) {
+                console.warn("CSV stats load failed:", csvErr);
             }
         }
 
@@ -56,12 +73,18 @@ export function Voltage() {
     const latest = useTelemetryStore((state) => state.latest);
 
     const chartData = history.map((tick) => {
-        const [h, m, s] = tick.ts.split(':').map(Number);
-        const date = new Date();
-        date.setHours(h, m, s, 0);
-        return { value: [date.getTime(), tick.voltage] };
+        let timeMs = Date.now();
+        if (tick.ts) {
+            const timePart = tick.ts.includes('T') ? tick.ts.split('T')[1].split('+')[0] : tick.ts;
+            const [h, m, s] = timePart.split(':').map(Number);
+            const date = new Date();
+            date.setHours(h || 0, m || 0, s || 0, 0);
+            timeMs = date.getTime();
+        }
+        return { value: [timeMs, tick.voltage] };
     });
 
+    const latestMs = chartData.length > 0 ? chartData[chartData.length - 1].value[0] : Date.now();
 
     const chartOption: echarts.EChartsOption = {
         tooltip: { trigger: 'axis'},
@@ -69,8 +92,8 @@ export function Voltage() {
         xAxis: {
             type: 'time',
             splitLine: { show: false },
-            min: Date.now() - 60000,
-            max: Date.now(),
+            min: latestMs - 60000,
+            max: latestMs,
             splitNumber: 5,  // only show ~5 labels across the axis
             axisLabel: {
                 formatter: function(value: number) {

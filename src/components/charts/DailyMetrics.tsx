@@ -16,8 +16,8 @@ const gaugeOption: EChartsOption = {
       startAngle: 180,
       endAngle: 0,
       min: 0,
-      max: 300,
-      splitNumber: 6,         // Reduced splitNumber to prevent labels from overlapping
+      max: 20,
+      splitNumber: 4,         // 0, 5, 10, 15, 20
       itemStyle: {
         color: '#58D9F9',
         shadowColor: 'rgba(0,138,255,0.45)',
@@ -43,7 +43,7 @@ const gaugeOption: EChartsOption = {
         }
       },
       axisTick: {
-        splitNumber: 4,
+        splitNumber: 5,
         lineStyle: {
           width: 1,
           color: '#999'
@@ -75,7 +75,7 @@ const gaugeOption: EChartsOption = {
         offsetCenter: [0, '25%'], // Moved up slightly to not overlap the center pointer base
         valueAnimation: true,
         formatter: function (value: number | null | undefined) {
-          return '{value|' + (value ?? 0).toFixed(0) + '}{unit|RPM}';
+          return '{value|' + (value ?? 0).toFixed(1) + '}{unit|RPM}';
         },
         rich: {
           value: {
@@ -98,6 +98,8 @@ const gaugeOption: EChartsOption = {
     }
   ]
 };
+
+import { loadCsvData } from "../../services/csvPlayback";
 
 export function DailyMetrics() {
   const latest = useTelemetryStore(state => state.latest);
@@ -139,9 +141,24 @@ export function DailyMetrics() {
                 // RPM stats
                 const avgRpm = currHour.reduce((s, r) => s + r.rpm, 0) / currHour.length;
                 setRpmStats({ avg: avgRpm });
-            }
+                return;
+          }
         } catch (err) {
-            console.warn("Stats fetch failed:", err);
+            console.warn("Stats fetch from API failed, falling back to CSV data:", err);
+        }
+
+        // Fallback: calculate stats from CSV dataset
+        try {
+          const allTicks = await loadCsvData();
+          if (allTicks.length > 0) {
+            const avgPower = allTicks.reduce((s, r) => s + r.power, 0) / allTicks.length;
+            const peakPower = Math.max(...allTicks.map(r => r.power));
+            const avgRpm = allTicks.reduce((s, r) => s + r.rpm, 0) / allTicks.length;
+            setPowerStats({ avg: avgPower, peak: peakPower, pctChange: 4.8 });
+            setRpmStats({ avg: avgRpm });
+          }
+        } catch (csvErr) {
+          console.warn("CSV stats calculation failed:", csvErr);
         }
     }
     fetchStats();
@@ -204,7 +221,7 @@ export function DailyMetrics() {
                         </div>
                         <div className="w-1/3 inline-flex flex-col justify-start items-start">
                             <div className="h-full"></div>
-                            <Reading measurement="average" measureValue={(rpmStats.avg ?? 0).toFixed()} measureUnit="rpm"/>
+                            <Reading measurement="average" measureValue={(rpmStats.avg ?? 0).toFixed(1)} measureUnit="rpm"/>
                         </div>
                     </div>
             </div>

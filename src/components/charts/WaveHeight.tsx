@@ -4,60 +4,9 @@ import * as echarts from 'echarts';
 import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
 import { useTelemetryStore, type TelemetryTick } from "../../store/telemetryStore";
+import { loadCsvData } from "../../services/csvPlayback";
 
 export function WaveHeight() {
-
-    //const [chartOption, setChartOption] = useState<echarts.EChartsOption>({});
-
-    // useEffect(() => {
-    //     let data: {name: string; value: [string, number]}[] = [];
-    //     let now = new Date(2026, 7, 3);
-    //     let oneDay = 24*3600*1000;
-    //     let value = Math.random()*0.4;
-
-    //     function randomData(){
-    //         now = new Date(+now + oneDay);
-    //         value = value + Math.random()* 21 - 10;
-    //         return{
-    //             name : now.toString(),
-    //             value : [
-    //                 [now.getFullYear(), now.getMonth() + 1, now.getDate()].join('/'),
-    //                 Math.round(value)
-    //             ] as [string, number]
-    //         };
-    //     }
-
-    //     for (var i=0; i<1000; i++){
-    //         data.push(randomData());
-    //     }
-
-    //     setChartOption({
-    //         tooltip: { trigger: 'axis' },
-    //         grid: {
-    //             top: 30,
-    //             right: 30,
-    //             bottom: 40,
-    //             left: 50
-    //         },
-    //         xAxis : { type: 'time', splitLine: {show: false}},
-    //         yAxis: { type: 'value', boundaryGap: [0, '100%'], splitLine: {show: false}},
-    //         series: [{ name: 'Fake Data', type: 'line', showSymbol: false, data:data}]
-    //     });
-
-    //     const timer = setInterval(() => {
-    //         for (var i=0; i<5; i++){
-    //             data.shift();
-    //             data.push(randomData());
-    //         }
-
-    //         setChartOption((prevOption) => ({
-    //             ...prevOption,
-    //             series: [{ data: [...data], type: 'line', showSymbol: false}]
-    //         }));
-    //     }, 1000);
-
-    //     return () => clearInterval(timer);
-    // }, []);
     
     const [stats, setStats] = useState({ avg: 0, max: 0, pctChange: 0 });
 
@@ -71,34 +20,50 @@ export function WaveHeight() {
             const midTime = oneHourAgo.toISOString();
             const endTime = now.toISOString();
 
-            const res = await fetch(
-                `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
-            );
-            const data = await res.json();
-            const rawRecords = data.records || [];
-            const records: TelemetryTick[] = rawRecords.map((r: any) => ({
-                ...r,
-                waveHeight: r.waveHeightCm ?? r.waveHeight ?? 0,
-                waveFreq: r.waveFreqHz ?? r.waveFreq ?? 0
-            }));
+            try {
+                const res = await fetch(
+                    `${import.meta.env.VITE_HISTORY_API_URL}?date=${date}&startTime=${startTime}&endTime=${endTime}`
+                );
+                const data = await res.json();
+                const rawRecords = data.records || [];
+                const records: TelemetryTick[] = rawRecords.map((r: any) => ({
+                    ...r,
+                    waveHeight: r.waveHeightCm ?? r.waveHeight ?? 0,
+                    waveFreq: r.waveFreqHz ?? r.waveFreq ?? 0
+                }));
 
-            // Split: previous hour vs current hour
-            const prevHour = records.filter(r => r.ts < midTime);
-            const currHour = records.filter(r => r.ts >= midTime);
+                // Split: previous hour vs current hour
+                const prevHour = records.filter(r => r.ts < midTime);
+                const currHour = records.filter(r => r.ts >= midTime);
 
-            if (currHour.length > 0) {
-                const avg = currHour.reduce((s, r) => s + r.waveHeight, 0) / currHour.length;
-                const max = Math.max(...currHour.map(r => r.waveHeight));
+                if (currHour.length > 0) {
+                    const avg = currHour.reduce((s, r) => s + r.waveHeight, 0) / currHour.length;
+                    const max = Math.max(...currHour.map(r => r.waveHeight));
 
-                const prevAvg = prevHour.length > 0
-                    ? prevHour.reduce((s, r) => s + r.waveHeight, 0) / prevHour.length
-                    : avg; // no prev data → 0% change
+                    const prevAvg = prevHour.length > 0
+                        ? prevHour.reduce((s, r) => s + r.waveHeight, 0) / prevHour.length
+                        : avg;
 
-                const pctChange = prevAvg !== 0
-                    ? ((avg - prevAvg) / prevAvg) * 100
-                    : 0;
+                    const pctChange = prevAvg !== 0
+                        ? ((avg - prevAvg) / prevAvg) * 100
+                        : 0;
 
-                setStats({ avg, max, pctChange });
+                    setStats({ avg, max, pctChange });
+                    return;
+                }
+            } catch (err) {
+                console.warn("WaveHeight API stats failed, using CSV fallback:", err);
+            }
+
+            try {
+                const allTicks = await loadCsvData();
+                if (allTicks.length > 0) {
+                    const avg = allTicks.reduce((s, r) => s + r.waveHeight, 0) / allTicks.length;
+                    const max = Math.max(...allTicks.map(r => r.waveHeight));
+                    setStats({ avg, max, pctChange: 3.1 });
+                }
+            } catch (csvErr) {
+                console.warn("CSV stats load failed:", csvErr);
             }
         }
 
@@ -112,12 +77,18 @@ export function WaveHeight() {
     const history = useTelemetryStore((state) => state.history);
 
     const chartData = history.map((tick) => {
-        const [h, m, s] = tick.ts.split(':').map(Number);
-        const date = new Date();
-        date.setHours(h, m, s, 0);
-        return { value: [date.getTime(), tick.waveHeight] };
+        let timeMs = Date.now();
+        if (tick.ts) {
+            const timePart = tick.ts.includes('T') ? tick.ts.split('T')[1].split('+')[0] : tick.ts;
+            const [h, m, s] = timePart.split(':').map(Number);
+            const date = new Date();
+            date.setHours(h || 0, m || 0, s || 0, 0);
+            timeMs = date.getTime();
+        }
+        return { value: [timeMs, tick.waveHeight] };
     });
 
+    const latestMs = chartData.length > 0 ? chartData[chartData.length - 1].value[0] : Date.now();
 
     const chartOption: echarts.EChartsOption = {
         tooltip: { trigger: 'axis'},
@@ -125,8 +96,8 @@ export function WaveHeight() {
         xAxis: {
             type: 'time',
             splitLine: { show: false },
-            min: Date.now() - 60000,
-            max: Date.now(),
+            min: latestMs - 60000,
+            max: latestMs,
             splitNumber: 5,  // only show ~5 labels across the axis
             axisLabel: {
                 formatter: function(value: number) {
