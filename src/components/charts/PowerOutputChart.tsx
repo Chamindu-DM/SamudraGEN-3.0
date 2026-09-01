@@ -2,7 +2,6 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts';
 import { useEffect, useState } from 'react';
 import { fetchLast24HoursPowerData } from '../../services/dynamoClient';
-import { loadCsvData } from '../../services/csvPlayback';
 
 export function PowerOutputChart() {
     const [chartData, setChartData] = useState<{ date: string[], data: number[] }>({ date: [], data: [] });
@@ -14,33 +13,24 @@ export function PowerOutputChart() {
         async function loadData() {
             try {
                 const results = await fetchLast24HoursPowerData();
+                if (!mounted) return;
+                
                 if (results && results.length > 0) {
-                    if (!mounted) return;
-                    
                     const date = results.map(r => {
+                        // Extract HH:mm:ss for x-axis
                         const t = r.ts;
                         if (t.includes('T')) {
-                            return t.split('T')[1].split('+')[0];
+                            const timeStr = t.split('T')[1].split('+')[0];
+                            return timeStr;
                         }
                         return t;
                     });
                     const data = results.map(r => r.power);
                     
                     setChartData({ date, data });
-                    return;
                 }
             } catch (err) {
-                console.warn("DynamoDB power data fetch failed, using CSV fallback:", err);
-            }
-
-            try {
-                const allTicks = await loadCsvData();
-                if (!mounted) return;
-                const date = allTicks.map(r => r.ts);
-                const data = allTicks.map(r => r.power);
-                setChartData({ date, data });
-            } catch (csvErr) {
-                console.error("Failed to load power data from CSV", csvErr);
+                console.warn("Failed to load power data:", err);
             } finally {
                 if (mounted) setLoading(false);
             }

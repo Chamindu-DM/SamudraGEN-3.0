@@ -99,8 +99,6 @@ const gaugeOption: EChartsOption = {
   ]
 };
 
-import { loadCsvData } from "../../services/csvPlayback";
-
 export function DailyMetrics() {
   const latest = useTelemetryStore(state => state.latest);
   const currentPower = latest?.power ?? 0;
@@ -141,24 +139,9 @@ export function DailyMetrics() {
                 // RPM stats
                 const avgRpm = currHour.reduce((s, r) => s + r.rpm, 0) / currHour.length;
                 setRpmStats({ avg: avgRpm });
-                return;
-          }
+            }
         } catch (err) {
-            console.warn("Stats fetch from API failed, falling back to CSV data:", err);
-        }
-
-        // Fallback: calculate stats from CSV dataset
-        try {
-          const allTicks = await loadCsvData();
-          if (allTicks.length > 0) {
-            const avgPower = allTicks.reduce((s, r) => s + r.power, 0) / allTicks.length;
-            const peakPower = Math.max(...allTicks.map(r => r.power));
-            const avgRpm = allTicks.reduce((s, r) => s + r.rpm, 0) / allTicks.length;
-            setPowerStats({ avg: avgPower, peak: peakPower, pctChange: 4.8 });
-            setRpmStats({ avg: avgRpm });
-          }
-        } catch (csvErr) {
-          console.warn("CSV stats calculation failed:", csvErr);
+            console.warn("Stats fetch failed:", err);
         }
     }
     fetchStats();

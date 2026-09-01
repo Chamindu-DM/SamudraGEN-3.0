@@ -4,7 +4,6 @@ import * as echarts from 'echarts';
 import { CommonCard } from "../ui/CommonCard";
 import { Reading } from "../ui/Reading";
 import { useTelemetryStore, type TelemetryTick } from "../../store/telemetryStore";
-import { loadCsvData } from "../../services/csvPlayback";
 
 export function Current() {
 
@@ -44,21 +43,9 @@ export function Current() {
                         : 0;
 
                     setStats({ avg, max, pctChange });
-                    return;
                 }
             } catch (err) {
-                console.warn("Current API stats failed, using CSV fallback:", err);
-            }
-
-            try {
-                const allTicks = await loadCsvData();
-                if (allTicks.length > 0) {
-                    const avg = allTicks.reduce((s, r) => s + r.current, 0) / allTicks.length;
-                    const max = Math.max(...allTicks.map(r => r.current));
-                    setStats({ avg, max, pctChange: 1.8 });
-                }
-            } catch (csvErr) {
-                console.warn("CSV stats load failed:", csvErr);
+                console.warn("Stats fetch failed:", err);
             }
         }
 
@@ -74,18 +61,12 @@ export function Current() {
 
 
     const chartData = history.map((tick) => {
-        let timeMs = Date.now();
-        if (tick.ts) {
-            const timePart = tick.ts.includes('T') ? tick.ts.split('T')[1].split('+')[0] : tick.ts;
-            const [h, m, s] = timePart.split(':').map(Number);
-            const date = new Date();
-            date.setHours(h || 0, m || 0, s || 0, 0);
-            timeMs = date.getTime();
-        }
-        return { value: [timeMs, tick.current] };
+        const timePart = tick.ts.includes('T') ? tick.ts.split('T')[1].split('+')[0] : tick.ts;
+        const [h, m, s] = timePart.split(':').map(Number);
+        const date = new Date();
+        date.setHours(h || 0, m || 0, s || 0, 0);
+        return { value: [date.getTime(), tick.current] };
     });
-
-    const latestMs = chartData.length > 0 ? chartData[chartData.length - 1].value[0] : Date.now();
 
     const chartOption: echarts.EChartsOption = {
         tooltip: { trigger: 'axis'},
@@ -93,8 +74,8 @@ export function Current() {
         xAxis: {
             type: 'time',
             splitLine: { show: false },
-            min: latestMs - 60000,
-            max: latestMs,
+            min: Date.now() - 60000,
+            max: Date.now(),
             splitNumber: 5,  // only show ~5 labels across the axis
             axisLabel: {
                 formatter: function(value: number) {
