@@ -3,7 +3,13 @@ import { publishControlCommand } from "../../services/mqttClient";
 import Logo from "../../assets/Logo.png";
 import { LiveBadge } from "../ui/LiveBadge";
 
-export default function AppHeader({onOpenLogs}: {onOpenLogs: () => void}) {
+export default function AppHeader({
+    onOpenLogs,
+    onTriggerEasterEgg,
+}: {
+    onOpenLogs: () => void;
+    onTriggerEasterEgg?: () => void;
+}) {
 
     const latest = useTelemetryStore(state => state.latest);
     const isLoadMode = latest?.relayMode === 'load';
@@ -35,7 +41,7 @@ export default function AppHeader({onOpenLogs}: {onOpenLogs: () => void}) {
                 </div>
             </div>
             <div className="size- flex justify-center items-center gap-2">
-                <LiveBadge />
+                <LiveBadge onTriggerEasterEgg={onTriggerEasterEgg || onOpenLogs} />
                 <button
                     onClick={onOpenLogs}
                     className="h-8 px-3 py-2 rounded-lg outline outline-1 outline-offset-[-1px] outline-black/10 flex justify-center items-center gap-1.5 cursor-pointer hover:bg-gray-50 transition-colors bg-transparent border-none"

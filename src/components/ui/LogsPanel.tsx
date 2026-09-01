@@ -104,7 +104,8 @@ export function LogsPanel({ isOpen, onClose }: LogsPanelProps){
     };
 
     // Determine which logs to show
-    let displayLogs = (store.historicalMode ? store.historicalLogs : store.history).filter(log => {
+    const liveLogs = [...store.history].reverse();
+    let displayLogs = (store.historicalMode ? store.historicalLogs : liveLogs).filter(log => {
         if (!store.historicalMode) return true; // Don't filter live stream
         let logTimeStr = log.ts;
         if (log.ts.includes("T")) {
